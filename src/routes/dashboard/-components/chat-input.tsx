@@ -1,0 +1,142 @@
+import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronDown, Send } from "lucide-react";
+import { useStarredModels } from "@/lib/client/hooks/use-models";
+import { cn } from "@/lib/utils";
+
+interface ChatInputProps {
+  input: string;
+  onInputChange: (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  isLoading: boolean;
+  selectedModel: string;
+  onModelChange: (modelId: string) => void;
+}
+
+export function ChatInput({
+  input,
+  onInputChange,
+  onSubmit,
+  isLoading,
+  selectedModel,
+  onModelChange,
+}: ChatInputProps) {
+  const [open, setOpen] = useState(false);
+  const { data: starredModels } = useStarredModels();
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isLoading) {
+        onSubmit(e as any);
+      }
+    }
+  };
+
+  const selectedModelData = starredModels?.find(
+    (m) => m.modelId === selectedModel
+  );
+
+  return (
+    <div className="border-t bg-background p-4">
+      <form onSubmit={onSubmit} className="space-y-2">
+        {/* Model Selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Model:</span>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-[300px] justify-between"
+              >
+                <span className="truncate">
+                  {selectedModelData?.modelName || selectedModel}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0">
+              <Command>
+                <CommandInput placeholder="Search models..." />
+                <CommandList>
+                  <CommandEmpty>No models found.</CommandEmpty>
+                  <CommandGroup heading="Starred Models">
+                    {starredModels?.map((model) => (
+                      <CommandItem
+                        key={model.modelId}
+                        value={model.modelId}
+                        onSelect={() => {
+                          onModelChange(model.modelId);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedModel === model.modelId
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-1 flex-col">
+                          <span className="text-sm">{model.modelName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {model.provider}
+                          </span>
+                        </div>
+                        {model.contextLength && (
+                          <Badge variant="secondary" className="ml-2">
+                            {(model.contextLength / 1000).toFixed(0)}k
+                          </Badge>
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Input Area */}
+        <div className="flex gap-2">
+          <Textarea
+            value={input}
+            onChange={onInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Send a message..."
+            className="min-h-[60px] max-h-[200px] resize-none"
+            disabled={isLoading}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || isLoading}
+            className="h-[60px] w-[60px]"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

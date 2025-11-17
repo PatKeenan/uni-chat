@@ -1,155 +1,26 @@
 import {
-  AudioWaveform,
-  BookOpen,
+  MessageSquarePlus,
   Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map as MapIcon,
-  PieChart,
   Settings2,
-  SquareTerminal,
 } from "lucide-react";
 import type * as React from "react";
-/* import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher" */
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { NavMain } from "./nav-main";
-import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
+import { NavFolders } from "./nav-folders";
+import { NavStarredModels } from "./nav-starred-models";
+import { Link } from "@tanstack/react-router";
 
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: MapIcon,
-    },
-  ],
-};
 export function AppSidebar({
   user,
   ...props
@@ -162,11 +33,52 @@ export function AppSidebar({
 }) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader></SidebarHeader>
+      <SidebarHeader>
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild size="lg">
+                <Link to="/dashboard/new">
+                  <MessageSquarePlus className="h-5 w-5" />
+                  <span className="font-semibold">New Chat</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* Chats organized by folders */}
+        <NavFolders />
+
+        {/* Starred models for quick access */}
+        <NavStarredModels />
+
+        {/* Navigation links */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link to="/dashboard/models">
+                  <Bot className="h-4 w-4" />
+                  <span>Browse Models</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link to="/dashboard/settings">
+                  <Settings2 className="h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>
