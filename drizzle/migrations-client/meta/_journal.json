@@ -8,6 +8,13 @@
       "when": 1763401279357,
       "tag": "0000_condemned_ben_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763429683852,
+      "tag": "0001_goofy_loki",
+      "breakpoints": true
     }
   ]
 }

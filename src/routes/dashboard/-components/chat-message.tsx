@@ -1,10 +1,11 @@
 import type { UIMessage } from "ai";
 import { Bot, User } from "lucide-react";
-import type { ChatMessage as ChatMessageType } from "@/lib/server/actions/message-actions";
 import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
-  message: UIMessage;
+  message: UIMessage & {
+    modelName?: string;
+  };
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -32,7 +33,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">
-            {isUser ? "You" : "Assistant"}
+            {isUser
+              ? "You"
+              : message.role === "assistant"
+                ? message.modelName || "Assistant"
+                : "System"}
           </span>
         </div>
         <div className="prose prose-sm max-w-none dark:prose-invert">

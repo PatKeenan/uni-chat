@@ -1,4 +1,4 @@
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
   notFound,
@@ -49,13 +49,12 @@ export const Route = createFileRoute("/dashboard/c/$chatId")({
       queryKey: ["messages", params.chatId],
       queryFn: () => getUIMessages(params.chatId, context.user?.id ?? ""),
     });
-    return { chat, messages };
+    return { chat, messages, userId: context.user?.id ?? "" };
   },
 });
 
 function ChatView() {
-  const navigate = useNavigate();
-  const { chat, messages } = Route.useLoaderData();
+  const { chat, messages, userId } = Route.useLoaderData();
 
   if (!chat || !chat.selectedModel) {
     return (
@@ -71,6 +70,7 @@ function ChatView() {
       messages={messages}
       selectedModel={chat.selectedModel}
       chatId={chat.id}
+      userId={userId}
     />
   );
 }
@@ -86,14 +86,17 @@ type ChatViewContentProps = {
   messages: UIMessage[];
   selectedModel: string;
   chatId: string;
+  userId: string;
 };
 function ChatViewContent({
   chat,
   messages: initialMessages,
   selectedModel: initialSelectedModel,
   chatId,
+  userId,
 }: ChatViewContentProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedModel, setSelectedModel] = useState(initialSelectedModel);
 
   // The messages from the loader are already in AI SDK UIMessage format
@@ -108,21 +111,42 @@ function ChatViewContent({
     initialMessages,
     initialModel: selectedModel,
     chatId,
+    userId,
   });
 
+  console.log(messages);
   const handleModelChange = async (modelId: string) => {
     setSelectedModel(modelId);
     await switchModel(modelId);
   };
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this chat?")) {
-      // Get current user session
-      const session = await getSession();
-      if (!session.data?.user?.id) return;
+    const confirmMessage =
+      "Are you sure you want to delete this chat?\n\n" +
+      "This will permanently delete:\n" +
+      "• The chat conversation\n" +
+      "• All messages in this chat\n" +
+      "• All message content and attachments\n\n" +
+      "This action cannot be undone.";
 
-      await deleteLocalChat(chatId, session.data.user.id);
-      navigate({ to: "/dashboard" });
+    if (confirm(confirmMessage)) {
+      try {
+        // Get current user session
+        const session = await getSession();
+        if (!session.data?.user?.id) return;
+
+        // Delete chat (cascade deletes messages and message parts)
+        await deleteLocalChat(chatId, session.data.user.id);
+
+        // Invalidate queries to update sidebar
+        queryClient.invalidateQueries({ queryKey: ["local-chats"] });
+
+        // Navigate back to dashboard
+        navigate({ to: "/dashboard" });
+      } catch (error) {
+        console.error("Failed to delete chat:", error);
+        alert("Failed to delete chat. Please try again.");
+      }
     }
   };
 

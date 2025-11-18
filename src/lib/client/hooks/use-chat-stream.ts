@@ -1,16 +1,23 @@
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { useEffect, useMemo, useState } from "react";
-import { updateLocalChatModel } from "@/lib/client/actions/chat-actions";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  updateLocalChatModel,
+  updateLocalChatTitle,
+} from "@/lib/client/actions/chat-actions";
 import { saveLocalMessages } from "@/lib/client/actions/message-actions";
 import { getSession, useSession } from "@/lib/client/auth-client";
 import { getApiKey } from "@/lib/client/storage/api-key";
 import { OpenRouterTransport } from "@/lib/client/transports/openrouter-transport";
+import { generateChatTitle } from "@/lib/client/utils/generate-chat-title";
 
 export interface UseChatStreamProps {
-  initialMessages?: UIMessage[];
+  initialMessages?: (UIMessage & {
+    modelName?: string;
+  })[];
   initialModel?: string;
   chatId: string;
+  userId: string;
 }
 
 /**
@@ -22,11 +29,15 @@ export function useChatStream({
   initialMessages = [],
   initialModel = "anthropic/claude-3.5-sonnet",
   chatId,
+  userId,
 }: UseChatStreamProps) {
   // AI SDK v3 requires manual input state management
   const [input, setInput] = useState("");
 
   const [currentModel, setCurrentModel] = useState(initialModel);
+
+  // Track if we've generated a title for this chat
+  const hasGeneratedTitle = useRef(false);
 
   // Create OpenRouter transport with memoization
   // This transport calls OpenRouter API directly from the client (no backend needed)
@@ -75,14 +86,18 @@ export function useChatStream({
     // Save messages to local PGlite after streaming completes
     onFinish: async ({ message: newMessage }) => {
       try {
-        const session = await getSession();
+        console.log({ newMessage });
+        /*  const session = await getSession();
         if (!session.data?.user?.id) {
           console.error("No user session found");
           return;
-        }
-
+        } */
+        const newMessageWithModelName = {
+          ...newMessage,
+          modelName: currentModel,
+        };
         // Save the new assistant message to local database
-        await saveLocalMessages(chatId, session.data.user.id, [newMessage]);
+        await saveLocalMessages(chatId, userId, [newMessageWithModelName]);
       } catch (error) {
         console.error("Error saving message to local DB:", error);
       }
@@ -123,6 +138,13 @@ export function useChatStream({
     // const session = await getSession();
     if (session?.user?.id) {
       await saveLocalMessages(chatId, session.user.id, [userMessage]);
+
+      // Generate title from first message if we haven't already
+      if (!hasGeneratedTitle.current && messages.length === 0) {
+        hasGeneratedTitle.current = true;
+        const title = generateChatTitle(userMessageText);
+        await updateLocalChatTitle(chatId, session.user.id, title);
+      }
     }
 
     // Send message using AI SDK v3 sendMessage

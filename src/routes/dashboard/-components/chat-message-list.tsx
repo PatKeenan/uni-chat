@@ -4,7 +4,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "./chat-message";
 
 interface ChatMessageListProps {
-  messages: UIMessage[];
+  messages: (UIMessage & {
+    modelName?: string;
+  })[];
   isLoading?: boolean;
 }
 

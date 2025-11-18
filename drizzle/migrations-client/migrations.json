@@ -19,5 +19,13 @@
     "bps": true,
     "folderMillis": 1763401279357,
     "hash": "70e5539a136f43f58caf36a16b29acfeb0e9d7bc2d665a7cb26692e033814f8d"
+  },
+  {
+    "sql": [
+      "ALTER TABLE \"message\" ADD COLUMN \"model_id\" text;"
+    ],
+    "bps": true,
+    "folderMillis": 1763429683852,
+    "hash": "a454bd44c0ab5cb40cef6c670d20412b418d0e13d9965e21e67603ccb60dd51d"
   }
 ]

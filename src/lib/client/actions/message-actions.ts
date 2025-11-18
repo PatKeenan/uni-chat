@@ -42,7 +42,9 @@ export type LocalMessage = DbMessage & {
 export async function saveLocalMessages(
   chatId: string,
   userId: string,
-  messages: UIMessage[]
+  messages: (UIMessage & {
+    modelName?: string;
+  })[]
 ): Promise<void> {
   const db = await getClientDb();
 
@@ -53,13 +55,15 @@ export async function saveLocalMessages(
   // Process each message
   for (const msg of messages) {
     const messageId = nanoid();
-
+    console.log({ msg });
     // Insert message record
     await db.insert(message).values({
       id: messageId,
       chatId,
       role: msg.role,
       order: orderCounter++,
+      metadata: msg.metadata,
+      modelName: msg.modelName,
     });
 
     // Process message parts
@@ -160,7 +164,9 @@ export async function getLocalMessages(
  * @param dbMessage - Message from database with parts
  * @returns AI SDK formatted message
  */
-export function toUIMessage(dbMessage: LocalMessage): UIMessage {
+export function toUIMessage(
+  dbMessage: LocalMessage
+): UIMessage & { modelName?: string } {
   const parts = dbMessage.parts.map((part) => {
     if (part.type === "text") {
       return {
@@ -195,6 +201,7 @@ export function toUIMessage(dbMessage: LocalMessage): UIMessage {
     id: dbMessage.id,
     role: dbMessage.role as "user" | "assistant" | "system",
     parts: parts as UIMessage["parts"],
+    modelName: dbMessage.modelName || undefined,
   };
 }
 
