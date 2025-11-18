@@ -1,11 +1,14 @@
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { useState } from "react";
-import { updateChatModel } from "@/lib/server/actions/chat-actions";
-import type { ChatMessage } from "@/lib/server/actions/message-actions";
+import type { UIMessage } from "ai";
+import { useEffect, useMemo, useState } from "react";
+import { updateLocalChatModel } from "@/lib/client/actions/chat-actions";
+import { saveLocalMessages } from "@/lib/client/actions/message-actions";
+import { getSession, useSession } from "@/lib/client/auth-client";
+import { getApiKey } from "@/lib/client/storage/api-key";
+import { OpenRouterTransport } from "@/lib/client/transports/openrouter-transport";
 
 export interface UseChatStreamProps {
-  initialMessages?: ChatMessage[];
+  initialMessages?: UIMessage[];
   initialModel?: string;
   chatId: string;
 }
@@ -23,6 +26,36 @@ export function useChatStream({
   // AI SDK v3 requires manual input state management
   const [input, setInput] = useState("");
 
+  const [currentModel, setCurrentModel] = useState(initialModel);
+
+  // Create OpenRouter transport with memoization
+  // This transport calls OpenRouter API directly from the client (no backend needed)
+  const transport = useMemo(() => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      console.warn("No API key found - transport will fail until key is set");
+      // Return a dummy transport that will error - user needs to set API key
+      return new OpenRouterTransport({
+        apiKey: "",
+        modelId: currentModel,
+        siteUrl: typeof window !== "undefined" ? window.location.origin : "",
+        siteName: "UniChat",
+      });
+    }
+
+    return new OpenRouterTransport({
+      apiKey,
+      modelId: currentModel,
+      siteUrl: typeof window !== "undefined" ? window.location.origin : "",
+      siteName: "UniChat",
+    });
+  }, [currentModel]);
+
+  // Update transport model when it changes
+  useEffect(() => {
+    transport.setModelId(currentModel);
+  }, [currentModel, transport]);
+
   const {
     messages,
     status,
@@ -32,17 +65,27 @@ export function useChatStream({
     regenerate,
     stop,
   } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      body: {
-        chatId,
-        modelId: initialModel,
-      },
-    }),
+    // Use custom OpenRouter transport for client-side streaming
+    transport,
     id: chatId,
     messages: initialMessages,
     onError: (error) => {
       console.error("Chat error:", error);
+    },
+    // Save messages to local PGlite after streaming completes
+    onFinish: async ({ message: newMessage }) => {
+      try {
+        const session = await getSession();
+        if (!session.data?.user?.id) {
+          console.error("No user session found");
+          return;
+        }
+
+        // Save the new assistant message to local database
+        await saveLocalMessages(chatId, session.data.user.id, [newMessage]);
+      } catch (error) {
+        console.error("Error saving message to local DB:", error);
+      }
     },
   });
 
@@ -58,15 +101,32 @@ export function useChatStream({
   /**
    * Handle form submission
    */
+  const { data: session } = useSession();
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     if (!input.trim()) return;
 
-    // Send message using AI SDK v3 sendMessage
-    await sendMessage({ text: input });
+    const userMessageText = input;
 
-    // Clear input after sending
+    // Clear input immediately for better UX
     setInput("");
+
+    // Create user message
+    const userMessage: UIMessage = {
+      id: `msg_${Date.now()}`,
+      role: "user",
+      parts: [{ type: "text", text: userMessageText }],
+    };
+
+    // Save user message to local database
+    // const session = await getSession();
+    if (session?.user?.id) {
+      await saveLocalMessages(chatId, session.user.id, [userMessage]);
+    }
+
+    // Send message using AI SDK v3 sendMessage
+    await sendMessage({ text: userMessageText });
   };
 
   /**
@@ -74,9 +134,14 @@ export function useChatStream({
    */
   const switchModel = async (newModelId: string) => {
     try {
-      await updateChatModel({
-        data: { chatId, modelId: newModelId },
-      });
+      // Update local state so next message uses new model
+      setCurrentModel(newModelId);
+
+      // Update chat model in local PGlite database
+      const session = await getSession();
+      if (session.data?.user?.id) {
+        await updateLocalChatModel(chatId, session.data.user.id, newModelId);
+      }
     } catch (error) {
       console.error("Failed to switch model:", error);
     }

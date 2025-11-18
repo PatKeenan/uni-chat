@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Check, Key, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,31 +14,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  deleteApiKey,
-  hasApiKey,
-  saveApiKey,
-  validateApiKey,
-} from "@/lib/server/actions/api-key-actions";
+  setApiKey as setLocalApiKey,
+  removeApiKey,
+  hasApiKey as hasLocalApiKey,
+} from "@/lib/client/storage/api-key";
 
 export const Route = createFileRoute("/dashboard/settings")({
-  loader: async () => {
-    const hasKey = await hasApiKey();
-    return { hasKey };
-  },
   component: SettingsView,
 });
 
 function SettingsView() {
-  const { hasKey: initialHasKey } = Route.useLoaderData();
-  const [hasKey, setHasKey] = useState(initialHasKey);
+  const [hasKey, setHasKey] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     valid: boolean;
     message: string;
   } | null>(null);
+
+  // Check for existing API key on mount
+  useEffect(() => {
+    setHasKey(hasLocalApiKey());
+  }, []);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) return;
@@ -47,27 +45,13 @@ function SettingsView() {
     setValidationResult(null);
 
     try {
-      // First validate the key
-      setIsValidating(true);
-      const validation = await validateApiKey({ data: { apiKey } });
-      setIsValidating(false);
-
-      if (!validation.valid) {
-        setValidationResult({
-          valid: false,
-          message: "Invalid API key. Please check and try again.",
-        });
-        setIsSaving(false);
-        return;
-      }
-
-      // Save the key
-      await saveApiKey({ data: { apiKey } });
+      // Save the key to localStorage
+      setLocalApiKey(apiKey);
       setHasKey(true);
       setApiKey("");
       setValidationResult({
         valid: true,
-        message: "API key saved successfully!",
+        message: "API key saved successfully! Your key is stored locally in your browser.",
       });
     } catch (error) {
       setValidationResult({
@@ -76,7 +60,6 @@ function SettingsView() {
       });
     } finally {
       setIsSaving(false);
-      setIsValidating(false);
     }
   };
 
@@ -87,7 +70,7 @@ function SettingsView() {
 
     setIsDeleting(true);
     try {
-      await deleteApiKey();
+      removeApiKey();
       setHasKey(false);
       setValidationResult({
         valid: true,
@@ -127,8 +110,8 @@ function SettingsView() {
                 <CardTitle>OpenRouter API Key</CardTitle>
               </div>
               <CardDescription>
-                Your OpenRouter API key is used to access AI models. Get your
-                key from{" "}
+                Your OpenRouter API key is stored locally in your browser and never sent to our servers.
+                Get your key from{" "}
                 <a
                   href="https://openrouter.ai/keys"
                   target="_blank"
@@ -145,8 +128,7 @@ function SettingsView() {
                   <Alert>
                     <Check className="h-4 w-4" />
                     <AlertDescription>
-                      You have an API key configured. Your key is encrypted and
-                      stored securely.
+                      You have an API key configured. Your key is stored locally in your browser.
                     </AlertDescription>
                   </Alert>
 
@@ -197,13 +179,9 @@ function SettingsView() {
 
                   <Button
                     onClick={handleSaveApiKey}
-                    disabled={!apiKey.trim() || isSaving || isValidating}
+                    disabled={!apiKey.trim() || isSaving}
                   >
-                    {isValidating
-                      ? "Validating..."
-                      : isSaving
-                        ? "Saving..."
-                        : "Save API Key"}
+                    {isSaving ? "Saving..." : "Save API Key"}
                   </Button>
                 </>
               )}

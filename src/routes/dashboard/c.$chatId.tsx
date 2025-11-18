@@ -1,52 +1,100 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { useChatStream } from "@/lib/client/hooks/use-chat-stream";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
-  deleteChat,
-  getChatById,
-  togglePinChat,
-} from "@/lib/server/actions/chat-actions";
-import { getMessagesByChatId } from "@/lib/server/actions/message-actions";
+  createFileRoute,
+  notFound,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
+import { createClientOnlyFn } from "@tanstack/react-start";
+import type { UIMessage } from "ai";
+import { useEffect, useState } from "react";
+import {
+  deleteLocalChat,
+  getLocalChatById,
+  toggleLocalChatPin,
+} from "@/lib/client/actions/chat-actions";
+import { getUIMessages } from "@/lib/client/actions/message-actions";
+import { getSession, useSession } from "@/lib/client/auth-client";
+import { useChatStream } from "@/lib/client/hooks/use-chat-stream";
 import { ChatHeader } from "./-components/chat-header";
 import { ChatInput } from "./-components/chat-input";
 import { ChatMessageList } from "./-components/chat-message-list";
 
-export const Route = createFileRoute("/dashboard/c/$chatId")({
-  loader: async ({ params }) => {
-    // Check if user has API key
-    const hasKey = await hasApiKey();
-    if (!hasKey) {
-      throw redirect({ to: "/dashboard/settings" });
-    }
+/* const initChat = createClientOnlyFn(async ({ params, userId }) => {
+  const chat = await getLocalChatById(params.chatId, userId);
+  if (!chat) {
+    throw redirect({ to: "/dashboard" });
+  }
+  const messages = await getUIMessages(chat?.id, userId);
+  return {
+    chat,
+    messages,
+  };
+}); */
 
-    // Get chat data
-    const chat = await getChatById({
-      data: { chatId: params.chatId },
+export const Route = createFileRoute("/dashboard/c/$chatId")({
+  component: ChatView,
+
+  loader: async ({ params, context }) => {
+    const chat = await context.queryClient.ensureQueryData({
+      queryKey: ["chat", params.chatId],
+      queryFn: () => getLocalChatById(params.chatId, context.user?.id ?? ""),
     });
 
     if (!chat) {
-      throw redirect({ to: "/dashboard" });
+      throw notFound();
     }
 
-    // Get messages
-    const messages = await getMessagesByChatId({
-      data: { chatId: params.chatId },
+    const messages = await context.queryClient.ensureQueryData({
+      queryKey: ["messages", params.chatId],
+      queryFn: () => getUIMessages(params.chatId, context.user?.id ?? ""),
     });
-
-    return {
-      chat,
-      messages,
-    };
+    return { chat, messages };
   },
-  component: ChatView,
 });
 
 function ChatView() {
   const navigate = useNavigate();
-  const { chat, messages: initialMessages } = Route.useLoaderData();
-  const { chatId } = Route.useParams();
-  const [selectedModel, setSelectedModel] = useState(chat.selectedModel);
+  const { chat, messages } = Route.useLoaderData();
+
+  if (!chat || !chat.selectedModel) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-muted-foreground">Loading chat...</div>
+      </div>
+    );
+  }
+
+  return (
+    <ChatViewContent
+      chat={chat}
+      messages={messages}
+      selectedModel={chat.selectedModel}
+      chatId={chat.id}
+    />
+  );
+}
+
+type ChatViewContentProps = {
+  chat: {
+    id: string;
+    title: string | null;
+    selectedModel: string;
+    pinned: boolean;
+    folderId: string | null;
+  };
+  messages: UIMessage[];
+  selectedModel: string;
+  chatId: string;
+};
+function ChatViewContent({
+  chat,
+  messages: initialMessages,
+  selectedModel: initialSelectedModel,
+  chatId,
+}: ChatViewContentProps) {
+  const navigate = useNavigate();
+  const [selectedModel, setSelectedModel] = useState(initialSelectedModel);
 
   // The messages from the loader are already in AI SDK UIMessage format
   const {
@@ -58,7 +106,7 @@ function ChatView() {
     switchModel,
   } = useChatStream({
     initialMessages,
-    initialModel: chat.selectedModel,
+    initialModel: selectedModel,
     chatId,
   });
 
@@ -69,13 +117,21 @@ function ChatView() {
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this chat?")) {
-      await deleteChat({ data: { chatId } });
+      // Get current user session
+      const session = await getSession();
+      if (!session.data?.user?.id) return;
+
+      await deleteLocalChat(chatId, session.data.user.id);
       navigate({ to: "/dashboard" });
     }
   };
 
   const handleTogglePin = async () => {
-    await togglePinChat({ data: { chatId, pinned: !chat.pinned } });
+    // Get current user session
+    const session = await getSession();
+    if (!session.data?.user?.id) return;
+
+    await toggleLocalChatPin(chatId, session.data.user.id, !chat.pinned);
   };
 
   const handleRename = () => {
@@ -89,7 +145,7 @@ function ChatView() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col grow">
       <ChatHeader
         chatId={chatId}
         title={chat.title || ""}

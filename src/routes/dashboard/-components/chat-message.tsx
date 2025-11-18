@@ -1,9 +1,10 @@
+import type { UIMessage } from "ai";
 import { Bot, User } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "@/lib/server/actions/message-actions";
 import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
-  message: ChatMessageType;
+  message: UIMessage;
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -36,7 +37,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
         <div className="prose prose-sm max-w-none dark:prose-invert">
           <div className="whitespace-pre-wrap">
-            {message.parts.map((part) => part.text).join("")}
+            {message.parts
+              .map((part) => (part.type === "text" ? part.text : ""))
+              .join("")}
           </div>
         </div>
       </div>

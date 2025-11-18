@@ -1,6 +1,10 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { getSession } from "@/lib/client/auth-client";
+import { createLocalChat } from "@/lib/client/actions/chat-actions";
+import { useStarredModels } from "@/lib/client/hooks/use-models";
+import { hasApiKey } from "@/lib/server/actions/api-key-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useStarredModels } from "@/lib/client/hooks/use-models";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
-import { createChat } from "@/lib/server/actions/chat-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/new")({
@@ -38,8 +39,19 @@ function NewChatView() {
 
     setIsCreating(true);
     try {
-      const chat = await createChat({
-        data: { modelId: selectedModel, title: "New Chat" },
+      // Get current user session
+      const session = await getSession();
+      if (!session.data?.user?.id) {
+        console.error("No user session found");
+        setIsCreating(false);
+        return;
+      }
+
+      // Create chat in local database
+      const chat = await createLocalChat({
+        userId: session.data.user.id,
+        selectedModel,
+        title: "New Chat",
       });
 
       navigate({ to: "/dashboard/c/$chatId", params: { chatId: chat.id } });

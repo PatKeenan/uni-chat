@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Search, Star } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useOpenRouterModels,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/client/hooks/use-models";
 import type { OpenRouterModel } from "@/lib/openrouter/client";
 import { hasApiKey } from "@/lib/server/actions/api-key-actions";
+import { getOpenRouterModels } from "@/lib/server/actions/model-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/models")({
@@ -28,28 +30,37 @@ export const Route = createFileRoute("/dashboard/models")({
     if (!hasKey) {
       throw redirect({ to: "/dashboard/settings" });
     }
-    return {};
+
+    const models = await getOpenRouterModels();
+    return { models };
   },
   component: ModelsView,
 });
 
 function ModelsView() {
-  const { data: allModels } = useOpenRouterModels();
-  const { data: starredModels } = useStarredModels();
+  const { models: allModels } = Route.useLoaderData();
+  /*   const { data: allModels, isLoading: isLoadingAllModels } =
+    useOpenRouterModels(); */
+  const { data: starredModels, isLoading: isLoadingStarredModels } =
+    useStarredModels();
   const { star, unstar } = useToggleModelStar();
   const [searchQuery, setSearchQuery] = useState("");
 
   const starredModelIds = new Set(starredModels?.map((m) => m.modelId) || []);
 
-  const filteredModels =
-    allModels?.data?.filter((model) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        model.id.toLowerCase().includes(searchLower) ||
-        model.name?.toLowerCase().includes(searchLower)
-      );
-    }) || [];
+  const filteredModels = React.useMemo(() => {
+    return (
+      allModels?.data?.filter((model) => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          model.id.toLowerCase().includes(searchLower) ||
+          model.name?.toLowerCase().includes(searchLower)
+        );
+      }) || []
+    );
+  }, [allModels, searchQuery]);
 
+  console.log(filteredModels[2]);
   const handleToggleStar = (model: OpenRouterModel) => {
     if (starredModelIds.has(model.id)) {
       unstar(model.id);
@@ -77,10 +88,11 @@ function ModelsView() {
           Browse and star your favorite AI models
         </p>
       </div>
-
       <Tabs defaultValue="all" className="w-full">
         <TabsList>
-          <TabsTrigger value="all">All Models</TabsTrigger>
+          <TabsTrigger value="all">
+            All Models ({filteredModels?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="starred">
             Starred ({starredModels?.length || 0})
           </TabsTrigger>
@@ -100,7 +112,22 @@ function ModelsView() {
 
           {/* Models Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredModels.map((model: any) => (
+            {/*  {isLoadingAllModels &&
+              Array.from({ length: 12 }).map((_, index) => (
+                <Card
+                  key={`skeleton-${index}`}
+                  className="animate-pulse min-h-48"
+                >
+                  <CardHeader>
+                    <Skeleton className="h-12 w-full" />
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))} */}
+            {filteredModels.map((model) => (
               <Card key={model.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -130,19 +157,26 @@ function ModelsView() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {model.context_length && (
+                    {model.contextLength && (
                       <Badge variant="secondary">
-                        {(model.context_length / 1000).toFixed(0)}k context
+                        {(model.contextLength / 1000).toFixed(0)}k context
                       </Badge>
                     )}
                     {model.pricing?.prompt && (
                       <Badge variant="outline">
-                        ${parseFloat(model.pricing.prompt).toFixed(4)}/1k
+                        ${Number(model.pricing.prompt * 1000000).toFixed(2)}
+                        /M input
+                      </Badge>
+                    )}
+                    {model.pricing?.completion && (
+                      <Badge variant="outline">
+                        ${Number(model.pricing.completion * 1000000).toFixed(2)}
+                        /M output
                       </Badge>
                     )}
                   </div>
                   {model.description && (
-                    <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
+                    <p className="mt-3 text-sm text-muted-foreground">
                       {model.description}
                     </p>
                   )}
@@ -195,9 +229,10 @@ function ModelsView() {
                           {(model.contextLength / 1000).toFixed(0)}k context
                         </Badge>
                       )}
-                      {model.pricingPrompt && (
+                      {model.pricingCompletion && (
                         <Badge variant="outline">
-                          ${Number(model.pricingPrompt).toFixed(4)}/1k tokens
+                          ${Number(model.pricingCompletion).toFixed(4)}/1k
+                          tokens
                         </Badge>
                       )}
                     </div>

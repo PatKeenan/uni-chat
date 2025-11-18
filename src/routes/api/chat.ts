@@ -1,23 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { eq } from "drizzle-orm";
 import { createOpenRouterClient } from "@/lib/openrouter/client";
-import {
-  type ChatMessage,
-  saveMessages,
-} from "@/lib/server/actions/message-actions";
-import { apiKey as apiKeyTable, chat } from "@/lib/server/db/schema";
 import { protectedMiddleware } from "@/lib/server/middleware/protected-middleware";
-import { decryptApiKey } from "@/lib/server/utils/encryption";
 
 /**
  * POST /api/chat
  * Streams AI responses using Vercel AI SDK + OpenRouter
  *
+ * LOCAL-FIRST: This endpoint does NOT persist any data.
+ * The client is responsible for storing messages locally.
+ *
  * Request body:
- * - chatId: string - ID of the chat conversation
+ * - chatId: string - ID of the chat conversation (not used server-side, just for client reference)
  * - messages: UIMessage[] - Previous messages in the conversation
  * - modelId: string - OpenRouter model ID (e.g., "anthropic/claude-3.5-sonnet")
+ * - apiKey: string - User's OpenRouter API key (sent from client, stored client-side)
  */
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -27,17 +24,18 @@ export const Route = createFileRoute("/api/chat")({
         try {
           // Parse request body
           const body = await request.json();
-          const { chatId, messages, modelId } = body as {
+          const { chatId, messages, modelId, apiKey } = body as {
             chatId: string;
             messages: UIMessage[];
             modelId: string;
+            apiKey: string;
           };
 
           // Validate required fields
-          if (!chatId || !modelId || !messages) {
+          if (!chatId || !modelId || !messages || !apiKey) {
             return new Response(
               JSON.stringify({
-                error: "Missing required fields: chatId, modelId, messages",
+                error: "Missing required fields: chatId, modelId, messages, apiKey",
               }),
               {
                 status: 400,
@@ -57,32 +55,7 @@ export const Route = createFileRoute("/api/chat")({
             );
           }
 
-          const { db } = context.config;
-
-          // Get user's API key from database
-          const keyRecord = await db
-            .select()
-            .from(apiKeyTable)
-            .where(eq(apiKeyTable.userId, context.user.id))
-            .limit(1);
-
-          if (!keyRecord || keyRecord.length === 0) {
-            return new Response(
-              JSON.stringify({
-                error:
-                  "No API key found. Please add your OpenRouter API key in settings.",
-              }),
-              {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-              }
-            );
-          }
-
-          // Decrypt the API key
-          const apiKey = await decryptApiKey(keyRecord[0].encryptedKey);
-
-          // Create OpenRouter client
+          // Create OpenRouter client with provided API key
           const openrouter = createOpenRouterClient(apiKey);
 
           // Convert UIMessage to model messages using AI SDK utility
@@ -98,38 +71,8 @@ export const Route = createFileRoute("/api/chat")({
           result.consumeStream();
 
           // Return streaming response using data stream protocol
-          return result.toUIMessageStreamResponse({
-            // Save messages after AI completes response
-            onFinish: async ({ responseMessage }) => {
-              try {
-                // Convert UIMessage to ChatMessage (filter to only text parts)
-                const convertToChat = (msg: UIMessage): ChatMessage => ({
-                  id: msg.id,
-                  role: msg.role,
-                  parts: msg.parts
-                    .filter((p) => p.type === "text")
-                    .map((p) => ({
-                      type: "text" as const,
-                      text: "text" in p ? (p.text as string) : "",
-                    })),
-                });
-
-                const allMessages: ChatMessage[] = [
-                  ...messages.map(convertToChat),
-                  convertToChat(responseMessage),
-                ];
-                await saveMessages({ data: { chatId, messages: allMessages } });
-
-                // Update chat timestamp
-                await db
-                  .update(chat)
-                  .set({ updatedAt: new Date() })
-                  .where(eq(chat.id, chatId));
-              } catch (error) {
-                console.error("Error saving messages:", error);
-              }
-            },
-          });
+          // NO PERSISTENCE - client handles saving messages
+          return result.toUIMessageStreamResponse();
         } catch (error) {
           console.error("Chat API error:", error);
           return new Response(

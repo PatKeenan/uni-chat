@@ -1,22 +1,24 @@
+import type { UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ChatMessage as ChatMessageType } from "@/lib/server/actions/message-actions";
 import { ChatMessage } from "./chat-message";
 
 interface ChatMessageListProps {
-  messages: ChatMessageType[];
+  messages: UIMessage[];
   isLoading?: boolean;
 }
 
 export function ChatMessageList({ messages, isLoading }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
+  const bottomRef = useRef<HTMLDivElement>(null);
   // Auto-scroll to bottom when new messages arrive
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: I know the lint rule is wrong here
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, []);
+  }, [messages]);
 
   if (messages.length === 0) {
     return (
@@ -52,6 +54,7 @@ export function ChatMessageList({ messages, isLoading }: ChatMessageListProps) {
             </div>
           </div>
         )}
+        <div ref={bottomRef} className="min-h-[2px] mt-8" />
       </div>
     </ScrollArea>
   );

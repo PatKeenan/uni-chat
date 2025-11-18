@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ import {
  * Hook to fetch all available OpenRouter models
  */
 export function useOpenRouterModels() {
-  return useSuspenseQuery({
+  return useQuery({
     queryKey: ["openrouter-models"],
     queryFn: async () => {
       const result = await getOpenRouterModels();
@@ -29,7 +30,7 @@ export function useOpenRouterModels() {
  * Hook to fetch user's starred models
  */
 export function useStarredModels() {
-  return useSuspenseQuery({
+  return useQuery({
     queryKey: ["starred-models"],
     queryFn: async () => {
       const result = await getStarredModels();

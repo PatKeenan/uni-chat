@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
+    "db:generate:client": "drizzle-kit generate --config=drizzle.client.config.ts && tsx scripts/export-migrations.ts",
     "cf-typegen": "wrangler types",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
@@ -21,6 +22,7 @@
   "dependencies": {
     "@ai-sdk/react": "3.0.0-beta.99",
     "@cloudflare/vite-plugin": "^1.13.8",
+    "@electric-sql/pglite": "^0.3.14",
     "@openrouter/ai-sdk-provider": "^1.2.3",
     "@openrouter/sdk": "^0.1.11",
     "@radix-ui/react-avatar": "^1.1.11",

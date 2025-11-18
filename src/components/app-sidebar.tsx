@@ -26,6 +26,7 @@ export function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: {
+    id: string;
     name: string;
     email: string;
     avatar: string;
@@ -50,7 +51,7 @@ export function AppSidebar({
 
       <SidebarContent>
         {/* Chats organized by folders */}
-        <NavFolders />
+        <NavFolders userId={user.id} />
 
         {/* Starred models for quick access */}
         <NavStarredModels />

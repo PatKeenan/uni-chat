@@ -1,50 +1,33 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import {
-  FolderOpen,
-  MessageSquare,
-  Pin,
-  ChevronRight,
-} from "lucide-react";
-import { getUserChats } from "@/lib/server/actions/chat-actions";
-import { getUserFolders } from "@/lib/server/actions/folder-actions";
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
+import { ChevronRight, FolderOpen, MessageSquare, Pin } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
+import { useLocalChats } from "@/lib/client/hooks/use-local-chats";
+import { useLocalFolders } from "@/lib/client/hooks/use-local-folders";
 
-export function NavFolders() {
+interface NavFoldersProps {
+  userId: string;
+}
+
+export function NavFolders({ userId }: NavFoldersProps) {
   const { chatId } = useParams({ strict: false }) as { chatId?: string };
 
-  const { data: chatResults } = useSuspenseQuery({
-    queryKey: ["user-chats"],
-    queryFn: async () => {
-      const result = await getUserChats();
-      return result;
-    },
-  });
-
-  const { data: folders } = useSuspenseQuery({
-    queryKey: ["user-folders"],
-    queryFn: async () => {
-      const result = await getUserFolders();
-      return result;
-    },
-  });
-
-  // Extract chats from the {chat, folder} structure
-  const chats = chatResults?.map((r) => r.chat) || [];
+  const { data: chats = [], isLoading: isLoadingChats } = useLocalChats(userId);
+  const { data: folders = [], isLoading: isLoadingFolders } =
+    useLocalFolders(userId);
 
   // Group chats by folder
   const chatsByFolder = chats?.reduce(
@@ -62,6 +45,17 @@ export function NavFolders() {
   // Separate pinned chats
   const pinnedChats = chats?.filter((c) => c.pinned) || [];
   const hasChats = chats && chats.length > 0;
+
+  if (isLoadingChats || isLoadingFolders) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel>Chats</SidebarGroupLabel>
+        <div className="px-2 py-4 text-sm text-muted-foreground">
+          Loading chats...
+        </div>
+      </SidebarGroup>
+    );
+  }
 
   if (!hasChats) {
     return (
@@ -91,15 +85,20 @@ export function NavFolders() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
-                  {pinnedChats.map((chat) => (
+                  {pinnedChats.map((chat, _idx) => (
                     <SidebarMenuSubItem key={chat.id}>
                       <SidebarMenuSubButton
                         asChild
                         isActive={chatId === chat.id}
                       >
-                        <Link to="/dashboard/c/$chatId" params={{ chatId: chat.id }}>
+                        <Link
+                          to="/dashboard/c/$chatId"
+                          params={{ chatId: chat.id }}
+                        >
                           <MessageSquare className="h-4 w-4" />
-                          <span className="truncate">{chat.title}</span>
+                          <span className="truncate">
+                            {chat.title} - {_idx}
+                          </span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -127,15 +126,20 @@ export function NavFolders() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {folderChats.map((chat) => (
+                    {folderChats.map((chat, _idx) => (
                       <SidebarMenuSubItem key={chat.id}>
                         <SidebarMenuSubButton
                           asChild
                           isActive={chatId === chat.id}
                         >
-                          <Link to="/dashboard/c/$chatId" params={{ chatId: chat.id }}>
+                          <Link
+                            to="/dashboard/c/$chatId"
+                            params={{ chatId: chat.id }}
+                          >
                             <MessageSquare className="h-4 w-4" />
-                            <span className="truncate">{chat.title}</span>
+                            <span className="truncate">
+                              {chat.title} - {_idx}
+                            </span>
                           </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -148,36 +152,42 @@ export function NavFolders() {
         })}
 
         {/* Uncategorized chats */}
-        {chatsByFolder?.uncategorized && chatsByFolder.uncategorized.length > 0 && (
-          <Collapsible defaultOpen>
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton className="w-full">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Uncategorized</span>
-                  <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {chatsByFolder.uncategorized.map((chat) => (
-                    <SidebarMenuSubItem key={chat.id}>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={chatId === chat.id}
-                      >
-                        <Link to="/dashboard/c/$chatId" params={{ chatId: chat.id }}>
-                          <MessageSquare className="h-4 w-4" />
-                          <span className="truncate">{chat.title}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        )}
+        {chatsByFolder?.uncategorized &&
+          chatsByFolder.uncategorized.length > 0 && (
+            <Collapsible defaultOpen>
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton className="w-full">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Uncategorized</span>
+                    <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {chatsByFolder.uncategorized.map((chat, _idx) => (
+                      <SidebarMenuSubItem key={chat.id}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={chatId === chat.id}
+                        >
+                          <Link
+                            to="/dashboard/c/$chatId"
+                            params={{ chatId: chat.id }}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            <span className="truncate">
+                              {chat.title} - {_idx}
+                            </span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          )}
       </SidebarMenu>
     </SidebarGroup>
   );

@@ -3,7 +3,7 @@
 **Project:** uni-chat
 **Version:** 2.0 (Local-First Migration)
 **Last Updated:** 2025-11-17
-**Status:** 🚧 Phase 1 - Infrastructure Setup
+**Status:** 🚧 Phase 6 - Data Management Features
 
 ---
 
@@ -282,7 +282,7 @@ src/lib/
 
 ## Implementation Roadmap
 
-### Phase 1: Infrastructure Setup 🚧 IN PROGRESS
+### Phase 1: Infrastructure Setup ✅ COMPLETED
 **Goal:** Set up PGlite and migration system
 
 **Tasks:**
@@ -293,59 +293,66 @@ src/lib/
    - ✅ TanStack Query documentation (`docs/packages/TANSTACK-QUERY.md`)
    - ✅ TanStack Router documentation (`docs/packages/TANSTACK-ROUTER.md`)
    - ✅ AI SDK documentation (`docs/packages/AI-SDK.md`)
-3. ⏳ Install `@electric-sql/pglite`
-4. ⏳ Create client database module (`src/lib/client/db/index.ts`)
-5. ⏳ Create migration export script (`scripts/export-migrations.ts`)
-6. ⏳ Create browser migration runner (`src/lib/client/db/migrations.ts`)
-7. ⏳ Update `package.json` scripts
-8. ⏳ Test basic PGlite connection in browser console
+3. ✅ Install `@electric-sql/pglite`
+4. ✅ Create client database module (`src/lib/client/db/index.ts`)
+5. ✅ Create migration export script (`scripts/export-migrations.ts`)
+6. ✅ Create browser migration runner (`src/lib/client/db/migrations.ts`)
+7. ✅ Update `package.json` scripts
+8. ✅ Test basic PGlite connection in browser console
 
 **Success Criteria:**
 - ✅ PRD created and comprehensive
 - ✅ Package documentation available for quick reference
-- ⏳ PGlite initializes successfully
-- ⏳ Can create tables in browser database
-- ⏳ Migrations run automatically on load
+- ✅ PGlite initializes successfully
+- ✅ Can create tables in browser database
+- ✅ Migrations run automatically on load
 
 ---
 
-### Phase 2: Schema Refactoring ⏳
+### Phase 2: Schema Refactoring ✅ COMPLETED
 **Goal:** Split schema into server-only and client-only tables
 
 **Tasks:**
-1. ⏳ Create `src/lib/server/db/schema/server-only.ts`
-2. ⏳ Create `src/lib/client/db/schema/client-only.ts`
-3. ⏳ Create `src/lib/shared/db/schema/types.ts`
-4. ⏳ Update imports throughout codebase
-5. ⏳ Generate separate migrations for client schema
+1. ✅ Create `src/lib/server/db/schema/server-only.ts`
+2. ✅ Create `src/lib/client/db/schema/client-only.ts`
+3. ✅ Create separate Drizzle config (`drizzle.client.config.ts`)
+4. ✅ Update imports throughout codebase
+5. ✅ Generate separate migrations for client schema
+6. ✅ Remove foreign key constraints from userId fields in client schema
 
-**Files to Create:**
+**Files Created:**
 - `src/lib/server/db/schema/server-only.ts`
 - `src/lib/client/db/schema/client-only.ts`
-- `src/lib/shared/db/schema/types.ts`
+- `src/lib/client/db/schema/index.ts`
+- `drizzle.client.config.ts`
 
-**Files to Modify:**
-- `src/lib/server/db/schema.ts` (split and potentially deprecate)
-- All files importing from schema.ts
+**Files Modified:**
+- `src/lib/server/db/schema/index.ts` (now re-exports server-only)
+- `package.json` (added `db:generate:client` script)
 
 **Success Criteria:**
-- Server code only imports server schema
-- Client code can import client schema
-- No circular dependencies
-- TypeScript compiles without errors
+- ✅ Server code only imports server schema
+- ✅ Client code can import client schema
+- ✅ No circular dependencies
+- ✅ TypeScript compiles without errors
+- ✅ Client migrations contain no server tables
+
+**Key Decision:** Removed foreign key constraints from `userId` fields in client schema since the `user` table lives in server database. This ensures client migrations are completely independent.
 
 ---
 
-### Phase 3: Client-Side Data Layer ⏳
+### Phase 3: Client-Side Data Layer ✅ COMPLETED
 **Goal:** Create client-side actions and hooks for local database
 
 **Tasks:**
-1. ⏳ Create `src/lib/client/actions/chat-actions.ts`
-2. ⏳ Create `src/lib/client/actions/message-actions.ts`
-3. ⏳ Create `src/lib/client/actions/folder-actions.ts`
-4. ⏳ Create `src/lib/client/hooks/use-local-chats.ts`
-5. ⏳ Create `src/lib/client/hooks/use-local-messages.ts`
-6. ⏳ Create `src/lib/client/hooks/use-local-folders.ts`
+1. ✅ Create `src/lib/client/actions/chat-actions.ts`
+2. ✅ Create `src/lib/client/actions/message-actions.ts`
+3. ✅ Create `src/lib/client/actions/folder-actions.ts`
+4. ✅ Create `src/lib/client/hooks/use-local-chats.ts`
+5. ✅ Create `src/lib/client/hooks/use-local-messages.ts`
+6. ✅ Create `src/lib/client/hooks/use-local-folders.ts`
+7. ✅ Fix TypeScript errors in all created files
+8. ✅ Test PGlite initialization with dev server
 
 **API Design:**
 
@@ -392,23 +399,120 @@ export function useLocalChats(): {
 }
 ```
 
+**Files Created:**
+- `src/lib/client/actions/chat-actions.ts` (CRUD operations for chats)
+- `src/lib/client/actions/message-actions.ts` (CRUD operations for messages with AI SDK integration)
+- `src/lib/client/actions/folder-actions.ts` (CRUD operations for folders)
+- `src/lib/client/hooks/use-local-chats.ts` (TanStack Query hooks for chats)
+- `src/lib/client/hooks/use-local-messages.ts` (TanStack Query hooks for messages)
+- `src/lib/client/hooks/use-local-folders.ts` (TanStack Query hooks for folders)
+
+**Implementation Notes:**
+- Message actions handle conversion between AI SDK UIMessage format and database structure
+- All actions include userId parameter for security checks (even though client-side)
+- Hooks use optimistic updates for better UX
+- Query keys are properly structured for cache invalidation
+- TypeScript types are fully inferred from Drizzle schema
+
 **Success Criteria:**
-- Can create chat in local database
-- Can query chats with TanStack Query
-- Can update and delete chats locally
-- All operations type-safe with Drizzle
+- ✅ Can create chat in local database
+- ✅ Can query chats with TanStack Query
+- ✅ Can update and delete chats locally
+- ✅ All operations type-safe with Drizzle
+- ✅ Message actions integrate with AI SDK UIMessage format
+- ✅ Hooks provide optimistic updates
+- ✅ No TypeScript errors in created files
 
 ---
 
-### Phase 4: Refactor Chat Flow ⏳
-**Goal:** Update chat creation and loading to use local database
+### Phase 4: Client-Side AI Streaming ✅ COMPLETED
+**Goal:** Implement direct client-to-OpenRouter streaming for maximum privacy
 
 **Tasks:**
-1. ⏳ Update `src/routes/dashboard/new.tsx` to create chats locally
-2. ⏳ Update `src/routes/dashboard/c.$chatId.tsx` loader to query local DB
-3. ⏳ Update `src/components/app-sidebar.tsx` to query local chats
-4. ⏳ Update `src/components/nav-folders.tsx` to use local folders
-5. ⏳ Remove server-side chat creation actions (or mark deprecated)
+1. ✅ Install `@openrouter/sdk` package
+2. ✅ Create custom OpenRouter transport (`src/lib/client/transports/openrouter-transport.ts`)
+3. ✅ Update `useChatStream` hook to use transport
+4. ✅ Move API key storage to localStorage (`src/lib/client/storage/api-key.ts`)
+5. ✅ Update settings page for client-side API key management
+6. ✅ Fix TypeScript errors in transport implementation
+
+**Implementation:**
+
+**OpenRouter Transport:**
+```typescript
+// src/lib/client/transports/openrouter-transport.ts
+export class OpenRouterTransport implements ChatTransport {
+  async sendMessages(options: {
+    trigger: "submit-message" | "regenerate-message";
+    chatId: string;
+    messageId: string | undefined;
+    messages: UIMessage[];
+    abortSignal?: AbortSignal;
+  }): Promise<ReadableStream<UIMessageChunk>> {
+    // Create OpenRouter provider with user's API key
+    const openrouter = createOpenRouter({
+      apiKey: this.apiKey,
+      headers: {
+        "HTTP-Referer": this.siteUrl,
+        "X-Title": this.siteName,
+      },
+    });
+
+    // Convert UI messages and stream via AI SDK
+    const modelMessages = convertToModelMessages(options.messages);
+    const result = streamText({
+      model: openrouter(this.modelId),
+      messages: modelMessages,
+      abortSignal: options.abortSignal,
+    });
+
+    return result.toUIMessageStream();
+  }
+}
+```
+
+**Updated useChatStream Hook:**
+```typescript
+// src/lib/client/hooks/use-chat-stream.ts
+const transport = useMemo(() => {
+  const apiKey = getApiKey(); // From localStorage
+  return new OpenRouterTransport({
+    apiKey,
+    modelId: currentModel,
+    siteUrl: window.location.origin,
+    siteName: "UniChat",
+  });
+}, [currentModel]);
+
+const { messages, status, sendMessage } = useChat({
+  transport, // Use custom transport instead of /api/chat
+  id: chatId,
+  initialMessages,
+  onFinish: async ({ message }) => {
+    // Save to local PGlite
+    await saveLocalMessages(chatId, userId, [message]);
+  },
+});
+```
+
+**Files Created:**
+- `src/lib/client/transports/openrouter-transport.ts` - Custom AI SDK transport
+- `src/lib/client/storage/api-key.ts` - localStorage API key management
+
+**Files Modified:**
+- `src/lib/client/hooks/use-chat-stream.ts` - Uses transport instead of API endpoint
+- `src/routes/dashboard/settings.tsx` - Client-side API key storage
+
+**Success Criteria:**
+- ✅ Messages stream directly from client → OpenRouter (bypassing server)
+- ✅ API keys stored in localStorage (never sent to server)
+- ✅ Messages saved to local PGlite after streaming
+- ✅ No server-side message persistence
+- ✅ Full TypeScript type safety with ChatTransport interface
+
+**Current Limitation:**
+- ⚠️ PGlite running in memory mode - data lost on refresh
+- ⚠️ Need to enable IndexedDB persistence (`dataDir: 'idb://uni-chat-local'`)
 
 **Changes:**
 
@@ -450,49 +554,43 @@ const messages = await getLocalMessages(chatId); // Client
 
 ---
 
-### Phase 5: Refactor Message Flow ⏳
-**Goal:** Save messages locally instead of server
+### Phase 5: Enable IndexedDB Persistence ✅
+**Goal:** Enable persistent storage for chats and messages
 
-**Tasks:**
-1. ⏳ Update `src/lib/client/hooks/use-chat-stream.ts` to save locally
-2. ⏳ Modify `src/routes/api/chat.ts` to remove server-side message saving
-3. ⏳ Test message streaming and local persistence
-4. ⏳ Verify messages load correctly after page refresh
+**Implementation:**
+Updated PGlite to use IndexedDB backend for persistent storage:
 
-**Changes:**
-
-**Before (api/chat.ts:103-121):**
 ```typescript
-onFinish: async ({ responseMessage }) => {
-  // Saves to server database
-  await saveMessages({ data: { chatId, messages: allMessages } });
-}
-```
-
-**After (api/chat.ts):**
-```typescript
-onFinish: async ({ responseMessage }) => {
-  // Do nothing - client will save locally
-  // Just update chat timestamp if needed
-}
-```
-
-**New (use-chat-stream.ts):**
-```typescript
-const { messages } = useChat({
-  // ... existing config
-  onFinish: async ({ messages }) => {
-    // Save to local database
-    await saveLocalMessages(chatId, messages);
-  }
+// src/lib/client/db/index.ts (lines 37-42)
+pgliteClient = await PGlite.create({
+  dataDir: 'idb://uni-chat-local',
 });
 ```
 
+**What Changed:**
+1. ✅ Updated `src/lib/client/db/index.ts` to use IndexedDB instead of memory mode
+2. ✅ Updated `src/components/nav-folders.tsx` to load chats from local PGlite using `useLocalChats()` hook
+3. ✅ Updated `src/components/app-sidebar.tsx` to pass userId to NavFolders component
+4. ✅ Updated `src/routes/dashboard.tsx` to provide user.id to AppSidebar
+
+**Tasks:**
+1. ✅ Update `src/lib/client/db/index.ts` to use IndexedDB
+2. ✅ Test message persistence across page refreshes
+3. ✅ Test chat list persistence (sidebar now loads from local PGlite)
+4. ✅ Verify IndexedDB storage in browser DevTools
+
 **Success Criteria:**
-- Messages saved to local database after streaming
-- Messages load from local database on page load
-- No messages sent to server database
-- Streaming still works correctly
+- ✅ Chats persist across page refreshes
+- ✅ Messages persist across page refreshes
+- ✅ Sidebar loads chats from local IndexedDB
+- ✅ IndexedDB database visible in browser DevTools
+- ✅ Application works offline after initial setup
+
+**Files Modified:**
+- [src/lib/client/db/index.ts](src/lib/client/db/index.ts#L37-L42) - Enabled IndexedDB persistence
+- [src/components/nav-folders.tsx](src/components/nav-folders.tsx#L30-L34) - Use local hooks instead of server actions
+- [src/components/app-sidebar.tsx](src/components/app-sidebar.tsx#L28-L54) - Pass userId to NavFolders
+- [src/routes/dashboard.tsx](src/routes/dashboard.tsx#L43-L44) - Provide user.id to AppSidebar
 
 ---
 
@@ -590,11 +688,13 @@ export async function getStorageUsage(): Promise<{ used: number; quota: number }
 
 ## Progress Tracking
 
-### Current Status: 🚧 Phase 1 - Infrastructure Setup
+### Current Status: 🚧 Phase 6 - Data Management Features
 
-#### Current Task: Install PGlite and create client database module
+#### Current Task: Add data export, import, and clear functionality
 
 ### Completed Tasks
+
+**Documentation:**
 - ✅ Research PGlite and Drizzle integration
 - ✅ Create comprehensive PRD document
 - ✅ Create PGlite package documentation (`docs/packages/PGLITE.md`)
@@ -603,14 +703,54 @@ export async function getStorageUsage(): Promise<{ used: number; quota: number }
 - ✅ Create TanStack Router package documentation (`docs/packages/TANSTACK-ROUTER.md`)
 - ✅ Create AI SDK package documentation (`docs/packages/AI-SDK.md`)
 
+**Phase 1: Infrastructure Setup (✅ COMPLETE)**
+- ✅ Install @electric-sql/pglite package
+- ✅ Create client database module (`src/lib/client/db/index.ts`)
+- ✅ Create migration export script (`scripts/export-migrations.ts`)
+- ✅ Create browser migration runner (`src/lib/client/db/migrations.ts`)
+- ✅ Update package.json scripts (`db:generate:client`)
+
+**Phase 2: Schema Refactoring (✅ COMPLETE)**
+- ✅ Create server-only schema (`src/lib/server/db/schema/server-only.ts`)
+- ✅ Create client-only schema (`src/lib/client/db/schema/client-only.ts`)
+- ✅ Create schema index files
+- ✅ Update client DB to use client schema
+- ✅ Create client Drizzle config (`drizzle.client.config.ts`)
+- ✅ Generate client-only migrations (`drizzle/migrations-client/`)
+- ✅ Export migrations to JSON for browser use
+
+**Phase 3: Client-Side Data Layer (✅ COMPLETE)**
+- ✅ Create chat actions (`src/lib/client/actions/chat-actions.ts`)
+- ✅ Create message actions (`src/lib/client/actions/message-actions.ts`)
+- ✅ Create folder actions (`src/lib/client/actions/folder-actions.ts`)
+- ✅ Create chat hooks (`src/lib/client/hooks/use-local-chats.ts`)
+- ✅ Create message hooks (`src/lib/client/hooks/use-local-messages.ts`)
+- ✅ Create folder hooks (`src/lib/client/hooks/use-local-folders.ts`)
+- ✅ Fix TypeScript errors
+- ✅ Test PGlite initialization in browser
+
+**Phase 4: Client-Side AI Streaming (✅ COMPLETE)**
+- ✅ Install @openrouter/sdk and @openrouter/ai-sdk-provider
+- ✅ Create OpenRouter transport (`src/lib/client/transports/openrouter-transport.ts`)
+- ✅ Implement ChatTransport interface with proper signatures
+- ✅ Create localStorage API key management (`src/lib/client/storage/api-key.ts`)
+- ✅ Update useChatStream hook to use transport
+- ✅ Update settings page for client-side API key storage
+- ✅ Configure transport with dynamic model switching
+- ✅ Fix TypeScript errors (ReadableStream<UIMessageChunk> return type)
+- ✅ Test streaming works client-side
+
+### Recently Completed
+- ✅ Phase 5: Enable IndexedDB Persistence - Chats and messages now persist across page refreshes
+- ✅ Phase 4: Client-Side AI Streaming - Direct OpenRouter communication with custom transport
+
 ### In Progress
-- 🚧 Phase 1: Infrastructure setup - Ready to install PGlite
+- 🚧 Phase 6: Data Management Features - Export, import, and clear local data
 
 ### Next Up
-- ⏳ Install @electric-sql/pglite
-- ⏳ Create client database module
-- ⏳ Create migration system
-- ⏳ Split schema files
+- ⏳ Add data export/import features
+- ⏳ Add storage usage indicator
+- ⏳ Add UI in settings page for data management
 
 ### Blocked Tasks
 None currently
@@ -796,6 +936,25 @@ See `docs/packages/` directory for detailed reference:
   - Simpler than server proxy
   - No server costs for streaming
 
+**AD-007: Custom ChatTransport implementation**
+- **Date:** 2025-11-17
+- **Decision:** Create custom transport instead of using fetch override in useChat
+- **Rationale:**
+  - Proper AI SDK integration via ChatTransport interface
+  - Type-safe with ReadableStream<UIMessageChunk> return type
+  - Supports abortSignal for cancellation
+  - Clean separation of concerns
+  - Uses @openrouter/ai-sdk-provider for OpenRouter integration
+
+**AD-008: Temporary memory mode for debugging**
+- **Date:** 2025-11-17
+- **Decision:** Run PGlite in memory mode temporarily during development
+- **Rationale:**
+  - Easier debugging without persistence
+  - Can verify streaming works before enabling IndexedDB
+  - Simple to switch to persistent mode (single line change)
+  - Expected behavior - data lost on refresh is intentional for now
+
 ---
 
 ## Appendix
@@ -851,6 +1010,6 @@ uni-chat/
 ---
 
 **Last Updated:** 2025-11-17
-**Current Phase:** Phase 1 - Infrastructure Setup
-**Current Task:** Creating package documentation
-**Next Update:** After completing package documentation
+**Current Phase:** Phase 6 - Data Management Features
+**Current Task:** Add data export, import, and clear functionality
+**Next Update:** After implementing data management features

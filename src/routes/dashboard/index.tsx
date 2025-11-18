@@ -7,7 +7,7 @@ import { getMostRecentChat } from "@/lib/server/actions/chat-actions";
  */
 export const Route = createFileRoute("/dashboard/")({
   loader: async () => {
-    // Try to get the most recent chat
+    /*  // Try to get the most recent chat
     const recentChat = await getMostRecentChat();
 
     if (recentChat) {
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/dashboard/")({
         to: `/dashboard/c/$chatId`,
         params: { chatId: recentChat.id },
       });
-    }
+    } */
 
     // No chats exist, show empty state
     return { hasChats: false };
