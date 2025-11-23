@@ -1,10 +1,11 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getSession } from "@/lib/client/auth-client";
 import { createLocalChat } from "@/lib/client/actions/chat-actions";
 import { useStarredModels } from "@/lib/client/hooks/use-models";
 import { hasApiKey } from "@/lib/server/actions/api-key-actions";
+import { getDefaultModel } from "@/lib/client/storage/default-model";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,47 @@ function NewChatView() {
   const { data: starredModels } = useStarredModels();
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCheckingDefaultModel, setIsCheckingDefaultModel] = useState(true);
+  const hasCheckedDefaultModel = useRef(false);
+
+  // Check for default model on mount and auto-create chat if set
+  useEffect(() => {
+    // Only run once
+    if (hasCheckedDefaultModel.current) return;
+    hasCheckedDefaultModel.current = true;
+
+    const autoCreateChatWithDefaultModel = async () => {
+      const defaultModel = getDefaultModel();
+
+      // If no default model, show the model selection screen
+      if (!defaultModel) {
+        setIsCheckingDefaultModel(false);
+        return;
+      }
+
+      const session = await getSession();
+      if (!session.data?.user?.id) {
+        setIsCheckingDefaultModel(false);
+        return;
+      }
+
+      setIsCreating(true);
+      try {
+        const chat = await createLocalChat({
+          userId: session.data.user.id,
+          selectedModel: defaultModel,
+        });
+
+        navigate({ to: "/dashboard/c/$chatId", params: { chatId: chat.id } });
+      } catch (error) {
+        console.error("Failed to auto-create chat:", error);
+        setIsCreating(false);
+        setIsCheckingDefaultModel(false);
+      }
+    };
+
+    autoCreateChatWithDefaultModel();
+  }, [navigate]);
 
   const handleCreateChat = async () => {
     if (!selectedModel) return;
@@ -60,6 +102,21 @@ function NewChatView() {
       setIsCreating(false);
     }
   };
+
+  // Show loading state while checking for default model
+  if (isCheckingDefaultModel || isCreating) {
+    return (
+      <div className="container mx-auto max-w-4xl p-6">
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-center">
+            <div className="text-lg text-muted-foreground">
+              {isCreating ? "Creating chat..." : "Loading..."}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-4xl p-6">

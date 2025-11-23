@@ -10,25 +10,19 @@
  * - Parts are stored in a separate table for flexibility
  */
 
-import type { UIMessage } from "ai";
 import { asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getClientDb } from "@/lib/client/db";
-import { message, messagePart } from "@/lib/client/db/schema";
-
+import { message } from "@/lib/client/db/schema";
+import type { CustomUIMessage, DB_Message } from "../types";
 /**
  * Internal message type from database
  */
-type DbMessage = typeof message.$inferSelect;
-type DbMessagePart = typeof messagePart.$inferSelect;
+//type DbMessagePart = typeof messagePart.$inferSelect;
 
 /**
  * Message with parts joined
  */
-export type LocalMessage = DbMessage & {
-  parts: DbMessagePart[];
-};
-
 /**
  * Save messages to local database
  *
@@ -42,34 +36,33 @@ export type LocalMessage = DbMessage & {
 export async function saveLocalMessages(
   chatId: string,
   userId: string,
-  messages: (UIMessage & {
-    modelName?: string;
-  })[]
+  messages: CustomUIMessage[]
 ): Promise<void> {
   const db = await getClientDb();
 
   // Start from existing message count to maintain order
-  const existingMessages = await getLocalMessages(chatId, userId);
-  let orderCounter = existingMessages.length;
+  // const existingMessages = await getLocalMessages(chatId, userId);
+  // let orderCounter = existingMessages.length;
 
   // Process each message
   for (const msg of messages) {
     const messageId = nanoid();
-    console.log({ msg });
     // Insert message record
     await db.insert(message).values({
       id: messageId,
       chatId,
       role: msg.role,
-      order: orderCounter++,
+      //order: orderCounter++
+      // ,
+      order: 0,
+      parts: msg.parts,
       metadata: msg.metadata,
-      modelName: msg.modelName,
     });
 
     // Process message parts
-    const parts: Array<typeof messagePart.$inferInsert> = [];
+    // const parts: Array<typeof messagePart.$inferInsert> = [];
 
-    // Handle parts array (AI SDK format)
+    /*     // Handle parts array (AI SDK format)
     if (Array.isArray(msg.parts)) {
       for (const part of msg.parts) {
         const partId = nanoid();
@@ -112,7 +105,7 @@ export async function saveLocalMessages(
     // Insert all parts
     if (parts.length > 0) {
       await db.insert(messagePart).values(parts);
-    }
+    } */
   }
 
   // Update chat timestamp
@@ -132,7 +125,7 @@ export async function saveLocalMessages(
 export async function getLocalMessages(
   chatId: string,
   userId: string
-): Promise<LocalMessage[]> {
+): Promise<DB_Message[]> {
   const db = await getClientDb();
 
   // First verify the chat belongs to the user
@@ -146,11 +139,6 @@ export async function getLocalMessages(
   const messages = await db.query.message.findMany({
     where: eq(message.chatId, chatId),
     orderBy: asc(message.order),
-    with: {
-      parts: {
-        orderBy: asc(messagePart.id),
-      },
-    },
   });
 
   return messages;
@@ -164,7 +152,7 @@ export async function getLocalMessages(
  * @param dbMessage - Message from database with parts
  * @returns AI SDK formatted message
  */
-export function toUIMessage(
+/* export function toUIMessage(
   dbMessage: LocalMessage
 ): UIMessage & { modelName?: string } {
   const parts = dbMessage.parts.map((part) => {
@@ -203,7 +191,7 @@ export function toUIMessage(
     parts: parts as UIMessage["parts"],
     modelName: dbMessage.modelName || undefined,
   };
-}
+} */
 
 /**
  * Get messages in AI SDK format
@@ -214,12 +202,8 @@ export function toUIMessage(
  * @param userId - User ID
  * @returns Array of AI SDK formatted messages
  */
-export async function getUIMessages(
-  chatId: string,
-  userId: string
-): Promise<UIMessage[]> {
-  const messages = await getLocalMessages(chatId, userId);
-  return messages.map(toUIMessage);
+export async function getUIMessages(chatId: string, userId: string) {
+  return await getLocalMessages(chatId, userId);
 }
 
 /**

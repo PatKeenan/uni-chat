@@ -1,21 +1,12 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  MoreHorizontal,
-  Trash2,
   Edit2,
   FolderOpen,
+  MoreHorizontal,
   Pin,
   PinOff,
+  Trash2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,13 +15,23 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DB_Chat, DB_Folder } from "@/lib/client/types";
 
 interface ChatHeaderProps {
-  chatId: string;
-  title: string;
-  folderName?: string;
-  folderId?: string | null;
-  isPinned: boolean;
+  chatId: DB_Chat["id"];
+  title: DB_Chat["title"];
+  folderName?: DB_Folder["name"];
+  folderId?: DB_Folder["id"] | null;
+  isPinned: DB_Chat["pinned"];
+
   onDelete: () => void;
   onRename: () => void;
   onMoveToFolder: () => void;
@@ -38,7 +39,6 @@ interface ChatHeaderProps {
 }
 
 export function ChatHeader({
-  chatId,
   title,
   folderName,
   folderId,

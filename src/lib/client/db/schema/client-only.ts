@@ -21,13 +21,14 @@ import {
   boolean,
   index,
   integer,
-  json,
+  jsonb,
   numeric,
   pgTable,
   text,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import type { CustomUIMessage } from "../../types";
 
 // ==================== API Key (Local) ====================
 
@@ -51,6 +52,7 @@ export const apiKey = pgTable(
   (table) => [unique().on(table.userId)]
 );
 
+export type DB_API_Key = typeof apiKey.$inferSelect;
 // ==================== Chat Organization ====================
 
 /**
@@ -71,6 +73,8 @@ export const folder = pgTable("folder", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export type DB_Folder = typeof folder.$inferSelect;
 
 /**
  * Chat
@@ -100,6 +104,8 @@ export const chat = pgTable(
   ]
 );
 
+export type DB_Chat = typeof chat.$inferSelect;
+
 // ==================== Messages ====================
 
 /**
@@ -118,7 +124,8 @@ export const message = pgTable(
     role: text("role").notNull(), // 'user' | 'assistant' | 'system'
     createdAt: timestamp("created_at").defaultNow().notNull(),
     order: integer("order").notNull(),
-    modelName: text("model_id"),
+    parts: jsonb("parts").$type<CustomUIMessage["parts"]>().default([]),
+    metadata: jsonb("metadata").$type<{ modelName?: string }>().default({}),
   },
   (table) => [
     index("message_chat_order_idx").on(table.chatId, table.order),
@@ -126,38 +133,7 @@ export const message = pgTable(
   ]
 );
 
-/**
- * Message Part
- *
- * Stores the content of a message.
- * Supports multiple part types: text, tool-call, tool-result.
- * Uses sparse columns (only relevant fields are populated).
- */
-export const messagePart = pgTable(
-  "message_part",
-  {
-    id: text("id").primaryKey(),
-    messageId: text("message_id")
-      .notNull()
-      .references(() => message.id, { onDelete: "cascade" }),
-    type: text("type").notNull(), // 'text' | 'tool-call' | 'tool-result'
-    order: integer("order").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-
-    // Sparse content columns (only populate relevant ones based on type)
-    textContent: text("text_content"), // For type='text'
-    toolCallId: text("tool_call_id"), // For type='tool-call' | 'tool-result'
-    toolCallName: text("tool_call_name"), // For type='tool-call'
-    toolCallArgs: json("tool_call_args").$type<Record<string, unknown>>(), // For type='tool-call'
-    toolResultId: text("tool_result_id"), // For type='tool-result'
-    toolResultContent: json("tool_result_content").$type<unknown>(), // For type='tool-result'
-    providerMetadata:
-      json("provider_metadata").$type<Record<string, unknown>>(),
-  },
-  (table) => [
-    index("message_part_message_order_idx").on(table.messageId, table.order),
-  ]
-);
+export type DB_Message = typeof message.$inferSelect;
 
 // ==================== Models ====================
 
@@ -183,6 +159,8 @@ export const starredModel = pgTable(
   (table) => [unique().on(table.userId, table.modelId)]
 );
 
+export type DB_Starred_Model = typeof starredModel.$inferSelect;
+
 // ==================== Relations ====================
 
 export const folderRelations = relations(folder, ({ many }) => ({
@@ -201,14 +179,6 @@ export const messageRelations = relations(message, ({ one, many }) => ({
   chat: one(chat, {
     fields: [message.chatId],
     references: [chat.id],
-  }),
-  parts: many(messagePart),
-}));
-
-export const messagePartRelations = relations(messagePart, ({ one }) => ({
-  message: one(message, {
-    fields: [messagePart.messageId],
-    references: [message.id],
   }),
 }));
 

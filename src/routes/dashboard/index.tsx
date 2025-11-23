@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { getMostRecentChat } from "@/lib/server/actions/chat-actions";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 /**
  * Dashboard Index Route
@@ -32,12 +32,9 @@ function DashboardIndex() {
         <p className="text-muted-foreground mb-6">
           Start a conversation with any AI model
         </p>
-        <button
-          type="button"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          New Chat
-        </button>
+        <Button asChild>
+          <Link to="/dashboard/new">New Chat</Link>
+        </Button>
       </div>
     </div>
   );

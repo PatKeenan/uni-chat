@@ -11,10 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useOpenRouterModels,
   useStarredModels,
   useToggleModelStar,
 } from "@/lib/client/hooks/use-models";
@@ -39,10 +37,8 @@ export const Route = createFileRoute("/dashboard/models")({
 
 function ModelsView() {
   const { models: allModels } = Route.useLoaderData();
-  /*   const { data: allModels, isLoading: isLoadingAllModels } =
-    useOpenRouterModels(); */
-  const { data: starredModels, isLoading: isLoadingStarredModels } =
-    useStarredModels();
+
+  const { data: starredModels } = useStarredModels();
   const { star, unstar } = useToggleModelStar();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -60,7 +56,6 @@ function ModelsView() {
     );
   }, [allModels, searchQuery]);
 
-  console.log(filteredModels[2]);
   const handleToggleStar = (model: OpenRouterModel) => {
     if (starredModelIds.has(model.id)) {
       unstar(model.id);
@@ -112,21 +107,6 @@ function ModelsView() {
 
           {/* Models Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/*  {isLoadingAllModels &&
-              Array.from({ length: 12 }).map((_, index) => (
-                <Card
-                  key={`skeleton-${index}`}
-                  className="animate-pulse min-h-48"
-                >
-                  <CardHeader>
-                    <Skeleton className="h-12 w-full" />
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardContent>
-                </Card>
-              ))} */}
             {filteredModels.map((model) => (
               <Card key={model.id}>
                 <CardHeader>
@@ -180,6 +160,13 @@ function ModelsView() {
                       {model.description}
                     </p>
                   )}
+                  {/* Add if it supports tools */}
+                  <Badge variant="outline">
+                    {model.supportedParameters?.includes("tool_choice") ||
+                    model.supportedParameters?.includes("tools")
+                      ? "Supports Tools"
+                      : "No Tools"}
+                  </Badge>
                 </CardContent>
               </Card>
             ))}

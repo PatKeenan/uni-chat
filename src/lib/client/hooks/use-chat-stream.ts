@@ -1,71 +1,119 @@
 import { useChat } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  updateLocalChatModel,
-  updateLocalChatTitle,
-} from "@/lib/client/actions/chat-actions";
+import { useChatStore } from "@/chat-store";
+import { updateLocalChatTitle } from "@/lib/client/actions/chat-actions";
 import { saveLocalMessages } from "@/lib/client/actions/message-actions";
-import { getSession, useSession } from "@/lib/client/auth-client";
-import { getApiKey } from "@/lib/client/storage/api-key";
-import { OpenRouterTransport } from "@/lib/client/transports/openrouter-transport";
+import { useSession } from "@/lib/client/auth-client";
+import { getApiKey, getTavilyApiKey } from "@/lib/client/storage/api-key";
+import type { OpenRouterTransport } from "@/lib/client/transports/openrouter-transport";
 import { generateChatTitle } from "@/lib/client/utils/generate-chat-title";
+import type { CustomUIMessage, DB_Message } from "../types";
+import { toUiMessages } from "../utils/to-ui-message";
 
 export interface UseChatStreamProps {
-  initialMessages?: (UIMessage & {
-    modelName?: string;
-  })[];
   initialModel?: string;
   chatId: string;
   userId: string;
+  initialMessages?: DB_Message[];
+  isLoadingInitialMessages?: boolean;
 }
 
 /**
  * Custom hook that wraps AI SDK's useChat (v3)
  * Handles streaming, model switching, and persistence
  * Note: AI SDK v3 no longer manages input state internally
+ * 
+
  */
+
 export function useChatStream({
-  initialMessages = [],
-  initialModel = "anthropic/claude-3.5-sonnet",
+  initialModel,
   chatId,
   userId,
+  initialMessages,
+  isLoadingInitialMessages = true,
 }: UseChatStreamProps) {
   // AI SDK v3 requires manual input state management
-  const [input, setInput] = useState("");
 
-  const [currentModel, setCurrentModel] = useState(initialModel);
+  // Managed via Zustand now to prevent re-renders
+  // const [input, setInput] = useState("");
+
+  const currentModel = useChatStore((state) => state.model);
+  const setModel = useChatStore((state) => state.setModel);
+  const [transport, setTransport] = useState(
+    new DefaultChatTransport({
+      body: {
+        apiKey: getApiKey() || "",
+        modelId: initialModel || "",
+        siteUrl: typeof window !== "undefined" ? window.location.origin : "",
+        siteName: "UniChat",
+      },
+    })
+  );
 
   // Track if we've generated a title for this chat
   const hasGeneratedTitle = useRef(false);
 
-  // Create OpenRouter transport with memoization
-  // This transport calls OpenRouter API directly from the client (no backend needed)
-  const transport = useMemo(() => {
+  // Create OpenRouter transport - stable instance that we update via setModelId
+  // We create it once with initialModel, then update it via useEffect when currentModel changes
+
+  const handleSetModel = (modelId: string) => {
+    setModel(modelId);
+  };
+
+  useEffect(() => {
+    setTransport(
+      new DefaultChatTransport({
+        body: {
+          apiKey: getApiKey() || "",
+          modelId: currentModel || "",
+          siteUrl: typeof window !== "undefined" ? window.location.origin : "",
+          siteName: "UniChat",
+        },
+      })
+    );
+  }, [currentModel]);
+
+  /*   useEffect(() => {
     const apiKey = getApiKey();
+
     if (!apiKey) {
       console.warn("No API key found - transport will fail until key is set");
-      // Return a dummy transport that will error - user needs to set API key
-      return new OpenRouterTransport({
-        apiKey: "",
-        modelId: currentModel,
-        siteUrl: typeof window !== "undefined" ? window.location.origin : "",
-        siteName: "UniChat",
-      });
     }
-
-    return new OpenRouterTransport({
-      apiKey,
-      modelId: currentModel,
+    transportRef.current = new OpenRouterTransport({
+      apiKey: apiKey || "",
+      modelId: initialModel || "",
       siteUrl: typeof window !== "undefined" ? window.location.origin : "",
       siteName: "UniChat",
     });
-  }, [currentModel]);
+  }, []); */
 
-  // Update transport model when it changes
+  /*  useEffect(() => {
+    if (!transportRef.current) {
+      const apiKey = getApiKey();
+      const config = {
+        apiKey: apiKey || "",
+        modelId: initialModel || "",
+        siteUrl: typeof window !== "undefined" ? window.location.origin : "",
+        siteName: "UniChat",
+      };
+
+      if (!apiKey) {
+        console.warn("No API key found - transport will fail until key is set");
+      }
+      transportRef.current = new OpenRouterTransport(config);
+    }
+  }, [transportRef]);
+ */
+  // Update transport model when currentModel changes
+  /*   // This allows switching models without recreating the transport
   useEffect(() => {
-    transport.setModelId(currentModel);
-  }, [currentModel, transport]);
+    if (transport.setModelId && currentModel) {
+      transport.setModelId(currentModel);
+      console.log("Updated transport model to:", currentModel);
+    }
+  }, [currentModel, transport]); */
 
   const {
     messages,
@@ -76,26 +124,19 @@ export function useChatStream({
     regenerate,
     stop,
   } = useChat({
-    // Use custom OpenRouter transport for client-side streaming
-    transport,
     id: chatId,
-    messages: initialMessages,
+    messages: toUiMessages(initialMessages || []),
     onError: (error) => {
       console.error("Chat error:", error);
     },
     // Save messages to local PGlite after streaming completes
     onFinish: async ({ message: newMessage }) => {
       try {
-        console.log({ newMessage });
-        /*  const session = await getSession();
-        if (!session.data?.user?.id) {
-          console.error("No user session found");
-          return;
-        } */
-        const newMessageWithModelName = {
+        const newMessageWithModelName: CustomUIMessage = {
           ...newMessage,
-          modelName: currentModel,
+          metadata: { modelName: currentModel },
         };
+
         // Save the new assistant message to local database
         await saveLocalMessages(chatId, userId, [newMessageWithModelName]);
       } catch (error) {
@@ -105,30 +146,23 @@ export function useChatStream({
   });
 
   /**
-   * Handle input change (manual state management for v3)
-   */
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setInput(e.target.value);
-  };
-
-  /**
    * Handle form submission
    */
   const { data: session } = useSession();
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const input = useChatStore.getState().input;
+
     if (!input.trim()) return;
 
     const userMessageText = input;
 
     // Clear input immediately for better UX
-    setInput("");
+    useChatStore.getState().setInput("");
 
     // Create user message
-    const userMessage: UIMessage = {
+    const userMessage: CustomUIMessage = {
       id: `msg_${Date.now()}`,
       role: "user",
       parts: [{ type: "text", text: userMessageText }],
@@ -148,41 +182,34 @@ export function useChatStream({
     }
 
     // Send message using AI SDK v3 sendMessage
-    await sendMessage({ text: userMessageText });
-  };
-
-  /**
-   * Switch to a different model
-   */
-  const switchModel = async (newModelId: string) => {
-    try {
-      // Update local state so next message uses new model
-      setCurrentModel(newModelId);
-
-      // Update chat model in local PGlite database
-      const session = await getSession();
-      if (session.data?.user?.id) {
-        await updateLocalChatModel(chatId, session.data.user.id, newModelId);
+    await sendMessage(
+      {
+        text: userMessageText,
+      },
+      {
+        body: {
+          chatId,
+          modelId: currentModel,
+          apiKey: getApiKey() || "",
+          tavilyApiKey: getTavilyApiKey() || "",
+        },
       }
-    } catch (error) {
-      console.error("Failed to switch model:", error);
-    }
+    );
   };
 
-  // Map status to isLoading for backward compatibility
   const isLoading = status === "submitted" || status === "streaming";
 
   return {
-    messages,
-    input,
-    handleInputChange,
+    messages: messages as CustomUIMessage[],
     handleSubmit,
     isLoading,
+    isLoadingInitialMessages,
     error,
     setMessages,
     reload: regenerate, // AI SDK v3 renamed reload to regenerate
     stop,
-    switchModel,
+    switchModel: handleSetModel,
     status, // Expose status for more granular control
+    currentModel,
   };
 }

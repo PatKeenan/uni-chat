@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  pruneMessages,
+  stepCountIs,
+  streamText,
+} from "ai";
+import type { DB_Message } from "@/lib/client/db/schema";
+import type { CustomUIMessage } from "@/lib/client/types";
+import { toUiMessages } from "@/lib/client/utils/to-ui-message";
 import { createOpenRouterClient } from "@/lib/openrouter/client";
+import { initWebSearchTool } from "@/lib/server/ai-tools/web-search";
 import { protectedMiddleware } from "@/lib/server/middleware/protected-middleware";
-
 /**
  * POST /api/chat
  * Streams AI responses using Vercel AI SDK + OpenRouter
@@ -16,26 +24,30 @@ import { protectedMiddleware } from "@/lib/server/middleware/protected-middlewar
  * - modelId: string - OpenRouter model ID (e.g., "anthropic/claude-3.5-sonnet")
  * - apiKey: string - User's OpenRouter API key (sent from client, stored client-side)
  */
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     middleware: [protectedMiddleware],
     handlers: {
       POST: async ({ request, context }) => {
+        const body = await request.json();
+        console.log(body);
         try {
           // Parse request body
-          const body = await request.json();
-          const { chatId, messages, modelId, apiKey } = body as {
+          const { chatId, messages, modelId, apiKey, tavilyApiKey } = body as {
             chatId: string;
-            messages: UIMessage[];
+            messages: DB_Message[];
             modelId: string;
-            apiKey: string;
+            apiKey?: string;
+            tavilyApiKey?: string;
           };
-
+          console.log({ modelId });
           // Validate required fields
           if (!chatId || !modelId || !messages || !apiKey) {
             return new Response(
               JSON.stringify({
-                error: "Missing required fields: chatId, modelId, messages, apiKey",
+                error:
+                  "Missing required fields: chatId, modelId, messages, apiKey",
               }),
               {
                 status: 400,
@@ -57,22 +69,50 @@ export const Route = createFileRoute("/api/chat")({
 
           // Create OpenRouter client with provided API key
           const openrouter = createOpenRouterClient(apiKey);
+          const uiMessages = toUiMessages(messages);
 
           // Convert UIMessage to model messages using AI SDK utility
-          const modelMessages = convertToModelMessages(messages);
+          const modelMessages =
+            convertToModelMessages<CustomUIMessage>(uiMessages);
+          const prunedMessages = pruneMessages({
+            messages: modelMessages,
+            reasoning: "before-last-message",
+            toolCalls: "before-last-message",
+          });
 
+          if (tavilyApiKey) {
+            const webSearchTool = initWebSearchTool(tavilyApiKey);
+            const result = streamText({
+              system: `You are a helpful assistant that can search the web for information using the webSearch tool.  Today is ${new Date().toLocaleDateString()} and the time is ${new Date().toLocaleTimeString()}. You are currently in the following timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`,
+              model: openrouter(modelId),
+              tools: {
+                webSearch: webSearchTool,
+              },
+              messages: prunedMessages,
+              stopWhen: stepCountIs(5),
+            });
+            // Ensure stream completes even if client disconnects
+            result.consumeStream();
+
+            // Return streaming response with reasoning enabled
+            // NO PERSISTENCE - client handles saving messages
+            return result.toUIMessageStreamResponse({
+              sendReasoning: true, // Enable reasoning token streaming
+            });
+          }
           // Stream the response
           const result = streamText({
             model: openrouter(modelId),
-            messages: modelMessages,
+            messages: prunedMessages,
           });
-
           // Ensure stream completes even if client disconnects
           result.consumeStream();
 
-          // Return streaming response using data stream protocol
+          // Return streaming response with reasoning enabled
           // NO PERSISTENCE - client handles saving messages
-          return result.toUIMessageStreamResponse();
+          return result.toUIMessageStreamResponse({
+            sendReasoning: true, // Enable reasoning token streaming
+          });
         } catch (error) {
           console.error("Chat API error:", error);
           return new Response(

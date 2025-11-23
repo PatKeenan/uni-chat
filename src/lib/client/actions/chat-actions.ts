@@ -7,15 +7,24 @@
 
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 import { getClientDb } from "@/lib/client/db";
 import { chat } from "@/lib/client/db/schema";
-
 /**
  * Create a new chat in local database
  *
  * @param data - Chat creation data
  * @returns Created chat
  */
+
+export const createLocalChatSchema = z.object({
+  userId: z.string(),
+  title: z.string().optional(),
+  selectedModel: z.string(),
+  folderId: z.string().optional(),
+});
+
+export const CreateLocalChatDTO = typeof createLocalChatSchema;
 export async function createLocalChat(data: {
   userId: string;
   title?: string;

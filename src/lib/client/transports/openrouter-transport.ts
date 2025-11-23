@@ -1,6 +1,6 @@
-import type { ChatTransport, UIMessage, UIMessageChunk } from "ai";
-import { streamText, convertToModelMessages } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { ChatTransport, UIMessage, UIMessageChunk } from "ai";
+import { convertToModelMessages, streamText } from "ai";
 
 /**
  * Custom AI SDK transport that calls OpenRouter directly from the client
@@ -12,11 +12,12 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
  * 3. Calls OpenRouter API directly with user's API key via AI SDK provider
  * 4. Streams the response back to the UI
  */
-export class OpenRouterTransport implements ChatTransport {
+export class OpenRouterTransport implements ChatTransport<UIMessage> {
   private apiKey: string;
   private modelId: string;
   private siteUrl?: string;
   private siteName?: string;
+  private id: string;
 
   constructor(config: {
     apiKey: string;
@@ -28,12 +29,19 @@ export class OpenRouterTransport implements ChatTransport {
     this.modelId = config.modelId;
     this.siteUrl = config.siteUrl;
     this.siteName = config.siteName;
+    this.id = Math.random().toString(36).substring(7);
+    console.log(
+      `[OpenRouterTransport] Created instance ${this.id} with model ${this.modelId}`
+    );
   }
 
   /**
    * Update the model ID dynamically
    */
   setModelId(modelId: string) {
+    console.log(
+      `[OpenRouterTransport] Instance ${this.id} updating model from ${this.modelId} to ${modelId}`
+    );
     this.modelId = modelId;
   }
 
@@ -48,12 +56,15 @@ export class OpenRouterTransport implements ChatTransport {
     abortSignal?: AbortSignal;
   }): Promise<ReadableStream<UIMessageChunk>> {
     try {
-      console.log("[OpenRouterTransport] Sending messages:", {
-        chatId: options.chatId,
-        trigger: options.trigger,
-        messageCount: options.messages.length,
-        model: this.modelId,
-      });
+      console.log(
+        `[OpenRouterTransport] Instance ${this.id} Sending messages:`,
+        {
+          chatId: options.chatId,
+          trigger: options.trigger,
+          messageCount: options.messages.length,
+          model: this.modelId,
+        }
+      );
 
       // Create OpenRouter provider with user's API key
       const openrouter = createOpenRouter({
@@ -93,6 +104,8 @@ export class OpenRouterTransport implements ChatTransport {
     console.log("[OpenRouterTransport] reconnectToStream not implemented", {
       chatId: options.chatId,
     });
-    throw new Error("Stream reconnection is not supported for client-side OpenRouter transport");
+    throw new Error(
+      "Stream reconnection is not supported for client-side OpenRouter transport"
+    );
   }
 }

@@ -1,11 +1,8 @@
+import { Check, ChevronDown, Send } from "lucide-react";
 import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
+import { useChatStore } from "@/chat-store";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -14,45 +11,46 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
-import { Check, ChevronDown, Send } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { useStarredModels } from "@/lib/client/hooks/use-models";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
-  input: string;
-  onInputChange: (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
-  selectedModel: string;
-  onModelChange: (modelId: string) => void;
 }
 
-export function ChatInput({
-  input,
-  onInputChange,
-  onSubmit,
-  isLoading,
-  selectedModel,
-  onModelChange,
-}: ChatInputProps) {
+export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
+  const currentModel = useChatStore((state) => state.model);
+  const setModel = useChatStore((state) => state.setModel);
+
   const [open, setOpen] = useState(false);
   const { data: starredModels } = useStarredModels();
+  const { input, setInput } = useChatStore();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        onSubmit(e as any);
+        e.currentTarget.form?.requestSubmit();
       }
     }
   };
 
   const selectedModelData = starredModels?.find(
-    (m) => m.modelId === selectedModel
+    (m) => m.modelId === currentModel
   );
+
+  console.log({ currentModel });
 
   return (
     <div className="border-t bg-background p-4">
@@ -68,9 +66,7 @@ export function ChatInput({
                 aria-expanded={open}
                 className="w-[300px] justify-between"
               >
-                <span className="truncate">
-                  {selectedModelData?.modelName || selectedModel}
-                </span>
+                <span className="truncate">{currentModel}</span>
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -85,14 +81,14 @@ export function ChatInput({
                         key={model.modelId}
                         value={model.modelId}
                         onSelect={() => {
-                          onModelChange(model.modelId);
+                          setModel(model.modelId);
                           setOpen(false);
                         }}
                       >
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            selectedModel === model.modelId
+                            currentModel === model.modelId
                               ? "opacity-100"
                               : "opacity-0"
                           )}
@@ -121,7 +117,7 @@ export function ChatInput({
         <div className="flex gap-2">
           <Textarea
             value={input}
-            onChange={onInputChange}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Send a message..."
             className="min-h-[60px] max-h-[200px] resize-none"

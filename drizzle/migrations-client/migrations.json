@@ -27,5 +27,23 @@
     "bps": true,
     "folderMillis": 1763429683852,
     "hash": "a454bd44c0ab5cb40cef6c670d20412b418d0e13d9965e21e67603ccb60dd51d"
+  },
+  {
+    "sql": [
+      "ALTER TABLE \"message\" ADD COLUMN \"metadata\" jsonb DEFAULT '{}'::jsonb;",
+      "\nALTER TABLE \"message\" DROP COLUMN \"model_id\";"
+    ],
+    "bps": true,
+    "folderMillis": 1763518264382,
+    "hash": "9f96525b500ae677d0bdee4c15a673963ea93e9d40c71c33fd213a0ae70c5d3b"
+  },
+  {
+    "sql": [
+      "DROP TABLE \"message_part\" CASCADE;",
+      "\nALTER TABLE \"message\" ADD COLUMN \"parts\" jsonb DEFAULT '[]'::jsonb;"
+    ],
+    "bps": true,
+    "folderMillis": 1763518952366,
+    "hash": "4c7f40eaa17e00421c4436d740b0c1480e6657f50aa5d43f59b462c7002917dd"
   }
 ]

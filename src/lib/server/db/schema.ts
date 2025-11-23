@@ -87,6 +87,21 @@ export const apiKey = pgTable(
   (table) => [unique().on(table.userId)]
 );
 
+// Tavily API Key
+export const tavilyApiKey = pgTable(
+  "tavily_api_key",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    encryptedKey: text("encrypted_key").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+  },
+  (table) => [unique().on(table.userId)]
+);
+
 export const folder = pgTable("folder", {
   id: text("id").primaryKey(),
   userId: text("user_id")
@@ -194,6 +209,7 @@ export const starredModel = pgTable(
 
 export const userRelations = relations(user, ({ many, one }) => ({
   apiKey: one(apiKey),
+  tavilyApiKey: one(tavilyApiKey),
   folders: many(folder),
   chats: many(chat),
   starredModels: many(starredModel),
@@ -202,6 +218,13 @@ export const userRelations = relations(user, ({ many, one }) => ({
 export const apiKeyRelations = relations(apiKey, ({ one }) => ({
   user: one(user, {
     fields: [apiKey.userId],
+    references: [user.id],
+  }),
+}));
+
+export const tavilyApiKeyRelations = relations(tavilyApiKey, ({ one }) => ({
+  user: one(user, {
+    fields: [tavilyApiKey.userId],
     references: [user.id],
   }),
 }));
