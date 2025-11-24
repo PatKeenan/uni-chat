@@ -14,28 +14,28 @@ This is a full-stack application built with TanStack Start (React Server Framewo
 ## Development Commands
 
 ### Essential Commands
-- `pnpm dev` - Start development server on port 3000
-- `pnpm build` - Build for production
-- `pnpm test` - Run all tests with Vitest
-- `pnpm typecheck` - Run TypeScript type checking
-- `pnpm lint` - Check code with Biome
-- `pnpm lint:fix` - Auto-fix linting issues
-- `pnpm format` - Format code with Biome
+- `bun dev` - Start development server on port 3000
+- `bun build` - Build for production
+- `bun test` - Run all tests with Vitest
+- `bun typecheck` - Run TypeScript type checking
+- `bun lint` - Check code with Biome
+- `bun lint:fix` - Auto-fix linting issues
+- `bun format` - Format code with Biome
 
 ### Database Commands
-- `pnpm db:generate` - Generate Drizzle migrations from schema changes
-- `pnpm db:migrate` - Apply pending migrations to database
-- `pnpm db:studio` - Open Drizzle Studio UI for database exploration
+- `bun db:generate` - Generate Drizzle migrations from schema changes
+- `bun db:migrate` - Apply pending migrations to database
+- `bun db:studio` - Open Drizzle Studio UI for database exploration
 
 ### Deployment
-- `pnpm deploy` - Build and deploy to Cloudflare Workers
-- `pnpm cf-typegen` - Generate TypeScript types for Cloudflare Workers
+- `bun deploy` - Build and deploy to Cloudflare Workers
+- `bun cf-typegen` - Generate TypeScript types for Cloudflare Workers
 
 ### Local Database Setup
 ```bash
 docker-compose up -d  # Start PostgreSQL container
-pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
+bun db:generate      # Generate migrations
+bun db:migrate       # Run migrations
 ```
 
 ## Architecture
@@ -101,8 +101,8 @@ Located in `src/lib/server/db/schema.ts`:
 - `verification` - Email verification tokens
 
 After schema changes:
-1. Run `pnpm db:generate` to create migrations
-2. Run `pnpm db:migrate` to apply migrations
+1. Run `bun db:generate` to create migrations
+2. Run `bun db:migrate` to apply migrations
 
 ### Path Aliases
 
