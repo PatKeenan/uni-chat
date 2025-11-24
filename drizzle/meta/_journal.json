@@ -1,27 +1,27 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1763228505431,
-      "tag": "0000_past_stepford_cuckoos",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1763317243103,
-      "tag": "0001_chubby_catseye",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1763496436052,
-      "tag": "0002_perfect_black_knight",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1763228505431,
+			"tag": "0000_past_stepford_cuckoos",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1763317243103,
+			"tag": "0001_chubby_catseye",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1763496436052,
+			"tag": "0002_perfect_black_knight",
+			"breakpoints": true
+		}
+	]
 }

@@ -4,33 +4,35 @@
  * These hooks use TanStack Query to manage folders in local PGlite database.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createLocalFolder,
-	getLocalFolders,
+	deleteAllLocalFolders,
+	deleteLocalFolder,
+	folderNameExists,
 	getLocalFolderById,
+	getLocalFolderByName,
+	getLocalFolders,
 	getLocalFoldersWithCounts,
 	updateLocalFolder,
-	updateLocalFolderName,
 	updateLocalFolderColor,
-	deleteLocalFolder,
-	deleteAllLocalFolders,
-	folderNameExists,
-	getLocalFolderByName,
-} from '@/lib/client/actions/folder-actions';
-import type { folder } from '@/lib/client/db/schema';
-import { chatKeys } from './use-local-chats';
+	updateLocalFolderName,
+} from "@/lib/client/actions/folder-actions";
+import type { folder } from "@/lib/client/db/schema";
+import { chatKeys } from "./use-local-chats";
 
 /**
  * Query keys for folder operations
  */
 export const folderKeys = {
-	all: (userId: string) => ['local-folders', userId] as const,
-	lists: (userId: string) => [...folderKeys.all(userId), 'list'] as const,
+	all: (userId: string) => ["local-folders", userId] as const,
+	lists: (userId: string) => [...folderKeys.all(userId), "list"] as const,
 	list: (userId: string) => [...folderKeys.lists(userId)] as const,
-	listWithCounts: (userId: string) => [...folderKeys.lists(userId), 'with-counts'] as const,
-	details: (userId: string) => [...folderKeys.all(userId), 'detail'] as const,
-	detail: (userId: string, folderId: string) => [...folderKeys.details(userId), folderId] as const,
+	listWithCounts: (userId: string) =>
+		[...folderKeys.lists(userId), "with-counts"] as const,
+	details: (userId: string) => [...folderKeys.all(userId), "detail"] as const,
+	detail: (userId: string, folderId: string) =>
+		[...folderKeys.details(userId), folderId] as const,
 };
 
 /**
@@ -81,7 +83,7 @@ export function useLocalFolder(folderId: string, userId: string) {
  */
 export function useLocalFolderByName(userId: string, name: string) {
 	return useQuery({
-		queryKey: [...folderKeys.all(userId), 'by-name', name],
+		queryKey: [...folderKeys.all(userId), "by-name", name],
 		queryFn: () => getLocalFolderByName(userId, name),
 		enabled: !!userId && !!name,
 	});
@@ -97,10 +99,10 @@ export function useLocalFolderByName(userId: string, name: string) {
 export function useFolderNameExists(
 	userId: string,
 	name: string,
-	excludeFolderId?: string
+	excludeFolderId?: string,
 ) {
 	return useQuery({
-		queryKey: [...folderKeys.all(userId), 'name-exists', name, excludeFolderId],
+		queryKey: [...folderKeys.all(userId), "name-exists", name, excludeFolderId],
 		queryFn: () => folderNameExists(userId, name, excludeFolderId),
 		enabled: !!userId && !!name,
 	});
@@ -125,7 +127,7 @@ export function useCreateLocalFolder(userId: string) {
 			// Add to detail cache
 			queryClient.setQueryData(
 				folderKeys.detail(userId, newFolder.id),
-				newFolder
+				newFolder,
 			);
 		},
 	});
@@ -155,9 +157,9 @@ export function useUpdateLocalFolder(userId: string) {
 			});
 
 			// Snapshot previous value
-			const previousFolder = queryClient.getQueryData<typeof folder.$inferSelect>(
-				folderKeys.detail(userId, folderId)
-			);
+			const previousFolder = queryClient.getQueryData<
+				typeof folder.$inferSelect
+			>(folderKeys.detail(userId, folderId));
 
 			// Optimistically update
 			if (previousFolder) {
@@ -175,7 +177,7 @@ export function useUpdateLocalFolder(userId: string) {
 			if (context?.previousFolder) {
 				queryClient.setQueryData(
 					folderKeys.detail(userId, folderId),
-					context.previousFolder
+					context.previousFolder,
 				);
 			}
 		},
@@ -214,8 +216,13 @@ export function useUpdateLocalFolderColor(userId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ folderId, color }: { folderId: string; color: string | null }) =>
-			updateLocalFolderColor(folderId, userId, color),
+		mutationFn: ({
+			folderId,
+			color,
+		}: {
+			folderId: string;
+			color: string | null;
+		}) => updateLocalFolderColor(folderId, userId, color),
 		onSuccess: (_, { folderId }) => {
 			queryClient.invalidateQueries({
 				queryKey: folderKeys.detail(userId, folderId),

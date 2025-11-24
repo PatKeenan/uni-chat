@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { reactStartCookies } from "better-auth/react-start";
-import { createDb } from "../db"; // your drizzle instance factory
+import type { createDb } from "../db"; // your drizzle instance factory
 import * as schema from "../db/schema";
 
 // Create auth instance factory that uses per-request database connections

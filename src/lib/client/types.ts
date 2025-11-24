@@ -2,10 +2,10 @@ import type { UIMessage } from "@ai-sdk/react";
 import type { UIDataTypes, UIMessagePart, UITools } from "ai";
 import type { User } from "better-auth";
 import type {
-  DB_Chat,
-  DB_Folder,
-  DB_Message,
-  DB_Starred_Model,
+	DB_Chat,
+	DB_Folder,
+	DB_Message,
+	DB_Starred_Model,
 } from "@/lib/client/db/schema";
 import type { getOpenRouterModels } from "../server/actions/model-actions";
 
@@ -18,30 +18,30 @@ type Model = Models[number];
 type ModelName = Model["canonicalSlug"];
 type ChatMessageParts = UIDataTypes;
 type CustomUIMessageData = {
-  modelName?: ModelName;
+	modelName?: ModelName;
 };
 
 type CustomUIMessagePart = UIMessagePart<UIDataTypes, UITools>;
 type CustomUIMessage = UIMessage<
-  CustomUIMessageData,
-  CustomUIMessagePart,
-  UITools
+	CustomUIMessageData,
+	CustomUIMessagePart,
+	UITools
 >;
 
 export type {
-  ChatId,
-  UserId,
-  Models,
-  Model,
-  ModelName,
-  // Messages
-  CustomUIMessage,
-  CustomUIMessageData,
-  CustomUIMessagePart,
-  ChatMessageParts,
-  // Database types
-  DB_Chat,
-  DB_Message,
-  DB_Starred_Model,
-  DB_Folder,
+	ChatId,
+	UserId,
+	Models,
+	Model,
+	ModelName,
+	// Messages
+	CustomUIMessage,
+	CustomUIMessageData,
+	CustomUIMessagePart,
+	ChatMessageParts,
+	// Database types
+	DB_Chat,
+	DB_Message,
+	DB_Starred_Model,
+	DB_Folder,
 };

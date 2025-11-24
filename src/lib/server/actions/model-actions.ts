@@ -12,25 +12,12 @@ import { decryptApiKey } from "../utils/encryption";
  */
 export const getOpenRouterModels = createServerFn()
   .middleware([protectedMiddleware])
-  .handler(async ({ context }) => {
-    const { db } = context.config;
-
-    // Get user's API key directly from database
-    const keyRecord = await db
-      .select()
-      .from(apiKeyTable)
-      .where(eq(apiKeyTable.userId, context.user.id))
-      .limit(1);
-
-    if (!keyRecord || keyRecord.length === 0) {
-      throw new Error("No API key found. Please add your OpenRouter API key.");
-    }
-
-    // Decrypt the API key
-    const apiKey = await decryptApiKey(keyRecord[0].encryptedKey);
+  .inputValidator(z.object({ localApiKey: z.string() }))
+  .handler(async ({ context, data }) => {
+    /* const apiKey = data.localApiKey || (await getApiKey(context)); */
 
     // Fetch models from OpenRouter
-    const response = await fetchOpenRouterModels(apiKey);
+    const response = await fetchOpenRouterModels(data.localApiKey);
 
     return response;
   });

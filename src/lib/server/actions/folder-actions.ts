@@ -8,131 +8,131 @@ import { protectedMiddleware } from "../middleware/protected-middleware";
  * Creates a new folder for organizing chats
  */
 export const createFolder = createServerFn()
-  .middleware([protectedMiddleware])
-  .inputValidator(
-    (data: { name: string; icon?: string; color?: string }) => data
-  )
-  .handler(async ({ context, data }) => {
-    const { db } = context.config;
+	.middleware([protectedMiddleware])
+	.inputValidator(
+		(data: { name: string; icon?: string; color?: string }) => data,
+	)
+	.handler(async ({ context, data }) => {
+		const { db } = context.config;
 
-    // Get the current max order for user's folders
-    const folders = await db
-      .select()
-      .from(folder)
-      .where(eq(folder.userId, context.user.id))
-      .orderBy(asc(folder.order));
+		// Get the current max order for user's folders
+		const folders = await db
+			.select()
+			.from(folder)
+			.where(eq(folder.userId, context.user.id))
+			.orderBy(asc(folder.order));
 
-    const maxOrder =
-      folders.length > 0 ? Math.max(...folders.map((f) => f.order)) : -1;
+		const maxOrder =
+			folders.length > 0 ? Math.max(...folders.map((f) => f.order)) : -1;
 
-    const newFolder = {
-      id: nanoid(),
-      userId: context.user.id,
-      name: data.name,
-      icon: data.icon || null,
-      color: data.color || null,
-      order: maxOrder + 1,
-    };
+		const newFolder = {
+			id: nanoid(),
+			userId: context.user.id,
+			name: data.name,
+			icon: data.icon || null,
+			color: data.color || null,
+			order: maxOrder + 1,
+		};
 
-    await db.insert(folder).values(newFolder);
+		await db.insert(folder).values(newFolder);
 
-    return newFolder;
-  });
+		return newFolder;
+	});
 
 /**
  * Gets all folders for the current user
  */
 export const getUserFolders = createServerFn()
-  .middleware([protectedMiddleware])
-  .handler(async ({ context }) => {
-    const { db } = context.config;
+	.middleware([protectedMiddleware])
+	.handler(async ({ context }) => {
+		const { db } = context.config;
 
-    const folders = await db
-      .select()
-      .from(folder)
-      .where(eq(folder.userId, context.user.id))
-      .orderBy(asc(folder.order));
+		const folders = await db
+			.select()
+			.from(folder)
+			.where(eq(folder.userId, context.user.id))
+			.orderBy(asc(folder.order));
 
-    return folders;
-  });
+		return folders;
+	});
 
 /**
  * Updates a folder's properties
  */
 export const updateFolder = createServerFn()
-  .middleware([protectedMiddleware])
-  .inputValidator(
-    z.object({
-      folderId: z.string(),
-      name: z.string().optional(),
-      icon: z.string().optional(),
-      color: z.string().optional(),
-    })
-  )
-  .handler(async ({ context, data }) => {
-    const { db } = context.config;
+	.middleware([protectedMiddleware])
+	.inputValidator(
+		z.object({
+			folderId: z.string(),
+			name: z.string().optional(),
+			icon: z.string().optional(),
+			color: z.string().optional(),
+		}),
+	)
+	.handler(async ({ context, data }) => {
+		const { db } = context.config;
 
-    const updates: Record<string, string | null | undefined> = {};
-    if (data.name !== undefined) updates.name = data.name;
-    if (data.icon !== undefined) updates.icon = data.icon;
-    if (data.color !== undefined) updates.color = data.color;
+		const updates: Record<string, string | null | undefined> = {};
+		if (data.name !== undefined) updates.name = data.name;
+		if (data.icon !== undefined) updates.icon = data.icon;
+		if (data.color !== undefined) updates.color = data.color;
 
-    await db
-      .update(folder)
-      .set(updates)
-      .where(
-        and(eq(folder.id, data.folderId), eq(folder.userId, context.user.id))
-      );
+		await db
+			.update(folder)
+			.set(updates)
+			.where(
+				and(eq(folder.id, data.folderId), eq(folder.userId, context.user.id)),
+			);
 
-    return { success: true };
-  });
+		return { success: true };
+	});
 
 /**
  * Deletes a folder (chats in it become uncategorized)
  */
 export const deleteFolder = createServerFn()
-  .middleware([protectedMiddleware])
-  .inputValidator(z.object({ folderId: z.string() }))
-  .handler(async ({ context, data }) => {
-    const { db } = context.config;
+	.middleware([protectedMiddleware])
+	.inputValidator(z.object({ folderId: z.string() }))
+	.handler(async ({ context, data }) => {
+		const { db } = context.config;
 
-    // First, set all chats in this folder to null folderId
-    await db
-      .update(chat)
-      .set({ folderId: null })
-      .where(eq(chat.folderId, data.folderId));
+		// First, set all chats in this folder to null folderId
+		await db
+			.update(chat)
+			.set({ folderId: null })
+			.where(eq(chat.folderId, data.folderId));
 
-    // Then delete the folder
-    await db
-      .delete(folder)
-      .where(
-        and(eq(folder.id, data.folderId), eq(folder.userId, context.user.id))
-      );
+		// Then delete the folder
+		await db
+			.delete(folder)
+			.where(
+				and(eq(folder.id, data.folderId), eq(folder.userId, context.user.id)),
+			);
 
-    return { success: true };
-  });
+		return { success: true };
+	});
 
 /**
  * Reorders folders based on an array of folder IDs
  */
 export const reorderFolders = createServerFn()
-  .middleware([protectedMiddleware])
-  .inputValidator(z.object({ folderIds: z.array(z.string()) }))
-  .handler(async ({ context, data }) => {
-    const { db } = context.config;
+	.middleware([protectedMiddleware])
+	.inputValidator(z.object({ folderIds: z.array(z.string()) }))
+	.handler(async ({ context, data }) => {
+		const { db } = context.config;
 
-    // Update the order of each folder
-    for (let i = 0; i < data.folderIds.length; i++) {
-      await db
-        .update(folder)
-        .set({ order: i })
-        .where(
-          and(
-            eq(folder.id, data.folderIds[i]),
-            eq(folder.userId, context.user.id)
-          )
-        );
-    }
+		// Update the order of each folder
+		for (let i = 0; i < data.folderIds.length; i++) {
+			await db
+				.update(folder)
+				.set({ order: i })
+				.where(
+					and(
+						eq(folder.id, data.folderIds[i]),
+						eq(folder.userId, context.user.id),
+					),
+				);
+		}
 
-    return { success: true };
-  });
+		return { success: true };
+	});

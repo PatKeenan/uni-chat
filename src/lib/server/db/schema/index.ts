@@ -5,4 +5,4 @@
  * This is what the server database module imports.
  */
 
-export * from './server-only';
+export * from "./server-only";

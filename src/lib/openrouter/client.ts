@@ -9,13 +9,13 @@ import { OpenRouter } from "@openrouter/sdk";
  * @returns OpenRouter client instance
  */
 export function createOpenRouterClient(apiKey: string) {
-  return createOpenRouter({
-    apiKey,
-    headers: {
-      "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-      "X-Title": "Uni-Chat",
-    },
-  });
+	return createOpenRouter({
+		apiKey,
+		headers: {
+			"HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+			"X-Title": "Uni-Chat",
+		},
+	});
 }
 
 /**
@@ -25,15 +25,15 @@ export function createOpenRouterClient(apiKey: string) {
  * @returns Promise with models data
  */
 export async function fetchOpenRouterModels(apiKey: string) {
-  const openRouter = new OpenRouter({
-    apiKey,
-  });
+	const openRouter = new OpenRouter({
+		apiKey,
+	});
 
-  const models = await openRouter.models.list();
+	const models = await openRouter.models.list();
 
-  return models;
+	return models;
 }
 
 export type OpenRouterModel = Awaited<
-  ReturnType<typeof fetchOpenRouterModels>
+	ReturnType<typeof fetchOpenRouterModels>
 >["data"][number];

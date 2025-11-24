@@ -4,26 +4,26 @@
  * These hooks use TanStack Query to manage messages in local PGlite database.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { UIMessage } from "ai";
 import {
-	saveLocalMessages,
+	deleteLocalMessage,
+	deleteLocalMessages,
+	getLocalMessageCount,
 	getLocalMessages,
 	getUIMessages,
-	deleteLocalMessages,
-	deleteLocalMessage,
-	getLocalMessageCount,
-} from '@/lib/client/actions/message-actions';
-import type { UIMessage } from 'ai';
-import { chatKeys } from './use-local-chats';
+	saveLocalMessages,
+} from "@/lib/client/actions/message-actions";
+import { chatKeys } from "./use-local-chats";
 
 /**
  * Query keys for message operations
  */
 export const messageKeys = {
-	all: (chatId: string) => ['local-messages', chatId] as const,
-	list: (chatId: string) => [...messageKeys.all(chatId), 'list'] as const,
-	uiList: (chatId: string) => [...messageKeys.all(chatId), 'ui-list'] as const,
-	count: (chatId: string) => [...messageKeys.all(chatId), 'count'] as const,
+	all: (chatId: string) => ["local-messages", chatId] as const,
+	list: (chatId: string) => [...messageKeys.all(chatId), "list"] as const,
+	uiList: (chatId: string) => [...messageKeys.all(chatId), "ui-list"] as const,
+	count: (chatId: string) => [...messageKeys.all(chatId), "count"] as const,
 };
 
 /**
@@ -86,7 +86,9 @@ export function useSaveLocalMessages(chatId: string, userId: string) {
 			queryClient.invalidateQueries({ queryKey: messageKeys.all(chatId) });
 
 			// Update chat timestamp in cache
-			queryClient.invalidateQueries({ queryKey: chatKeys.detail(userId, chatId) });
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.detail(userId, chatId),
+			});
 		},
 	});
 }
@@ -137,22 +139,25 @@ export function useOptimisticMessage(chatId: string) {
 	const addOptimisticMessage = (message: UIMessage) => {
 		queryClient.setQueryData<UIMessage[]>(
 			messageKeys.uiList(chatId),
-			(old = []) => [...old, message]
+			(old = []) => [...old, message],
 		);
 	};
 
 	const removeOptimisticMessage = (messageId: string) => {
 		queryClient.setQueryData<UIMessage[]>(
 			messageKeys.uiList(chatId),
-			(old = []) => old.filter((msg) => msg.id !== messageId)
+			(old = []) => old.filter((msg) => msg.id !== messageId),
 		);
 	};
 
-	const updateOptimisticMessage = (messageId: string, updates: Partial<UIMessage>) => {
+	const updateOptimisticMessage = (
+		messageId: string,
+		updates: Partial<UIMessage>,
+	) => {
 		queryClient.setQueryData<UIMessage[]>(
 			messageKeys.uiList(chatId),
 			(old = []) =>
-				old.map((msg) => (msg.id === messageId ? { ...msg, ...updates } : msg))
+				old.map((msg) => (msg.id === messageId ? { ...msg, ...updates } : msg)),
 		);
 	};
 

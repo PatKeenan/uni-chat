@@ -16,6 +16,7 @@ import {
   useStarredModels,
   useToggleModelStar,
 } from "@/lib/client/hooks/use-models";
+import { getApiKey } from "@/lib/client/storage/api-key";
 import type { OpenRouterModel } from "@/lib/openrouter/client";
 import { hasApiKey } from "@/lib/server/actions/api-key-actions";
 import { getOpenRouterModels } from "@/lib/server/actions/model-actions";
@@ -24,12 +25,16 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/dashboard/models")({
   loader: async () => {
     // Check if user has API key
+
     const hasKey = await hasApiKey();
-    if (!hasKey) {
+    const localKey = getApiKey();
+    if (!hasKey && !localKey) {
       throw redirect({ to: "/dashboard/settings" });
     }
 
-    const models = await getOpenRouterModels();
+    const models = await getOpenRouterModels({
+      data: { localApiKey: localKey || "" },
+    });
     return { models };
   },
   component: ModelsView,

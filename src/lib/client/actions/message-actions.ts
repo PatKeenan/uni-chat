@@ -34,35 +34,35 @@ import type { CustomUIMessage, DB_Message } from "../types";
  * @param messages - Array of AI SDK messages
  */
 export async function saveLocalMessages(
-  chatId: string,
-  userId: string,
-  messages: CustomUIMessage[]
+	chatId: string,
+	userId: string,
+	messages: CustomUIMessage[],
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  // Start from existing message count to maintain order
-  // const existingMessages = await getLocalMessages(chatId, userId);
-  // let orderCounter = existingMessages.length;
+	// Start from existing message count to maintain order
+	// const existingMessages = await getLocalMessages(chatId, userId);
+	// let orderCounter = existingMessages.length;
 
-  // Process each message
-  for (const msg of messages) {
-    const messageId = nanoid();
-    // Insert message record
-    await db.insert(message).values({
-      id: messageId,
-      chatId,
-      role: msg.role,
-      //order: orderCounter++
-      // ,
-      order: 0,
-      parts: msg.parts,
-      metadata: msg.metadata,
-    });
+	// Process each message
+	for (const msg of messages) {
+		const messageId = nanoid();
+		// Insert message record
+		await db.insert(message).values({
+			id: messageId,
+			chatId,
+			role: msg.role,
+			//order: orderCounter++
+			// ,
+			order: 0,
+			parts: msg.parts,
+			metadata: msg.metadata,
+		});
 
-    // Process message parts
-    // const parts: Array<typeof messagePart.$inferInsert> = [];
+		// Process message parts
+		// const parts: Array<typeof messagePart.$inferInsert> = [];
 
-    /*     // Handle parts array (AI SDK format)
+		/*     // Handle parts array (AI SDK format)
     if (Array.isArray(msg.parts)) {
       for (const part of msg.parts) {
         const partId = nanoid();
@@ -106,11 +106,11 @@ export async function saveLocalMessages(
     if (parts.length > 0) {
       await db.insert(messagePart).values(parts);
     } */
-  }
+	}
 
-  // Update chat timestamp
-  const { touchLocalChat } = await import("./chat-actions");
-  await touchLocalChat(chatId, userId);
+	// Update chat timestamp
+	const { touchLocalChat } = await import("./chat-actions");
+	await touchLocalChat(chatId, userId);
 }
 
 /**
@@ -123,25 +123,25 @@ export async function saveLocalMessages(
  * @returns Array of messages with parts
  */
 export async function getLocalMessages(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<DB_Message[]> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  // First verify the chat belongs to the user
-  const { getLocalChatById } = await import("./chat-actions");
-  const chat = await getLocalChatById(chatId, userId);
-  if (!chat) {
-    throw new Error("Chat not found or access denied");
-  }
+	// First verify the chat belongs to the user
+	const { getLocalChatById } = await import("./chat-actions");
+	const chat = await getLocalChatById(chatId, userId);
+	if (!chat) {
+		throw new Error("Chat not found or access denied");
+	}
 
-  // Get all messages for this chat
-  const messages = await db.query.message.findMany({
-    where: eq(message.chatId, chatId),
-    orderBy: asc(message.order),
-  });
+	// Get all messages for this chat
+	const messages = await db.query.message.findMany({
+		where: eq(message.chatId, chatId),
+		orderBy: asc(message.order),
+	});
 
-  return messages;
+	return messages;
 }
 
 /**
@@ -203,7 +203,7 @@ export async function getLocalMessages(
  * @returns Array of AI SDK formatted messages
  */
 export async function getUIMessages(chatId: string, userId: string) {
-  return await getLocalMessages(chatId, userId);
+	return await getLocalMessages(chatId, userId);
 }
 
 /**
@@ -216,20 +216,20 @@ export async function getUIMessages(chatId: string, userId: string) {
  * @param userId - User ID (for security check)
  */
 export async function deleteLocalMessages(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  // Verify chat ownership
-  const { getLocalChatById } = await import("./chat-actions");
-  const chat = await getLocalChatById(chatId, userId);
-  if (!chat) {
-    throw new Error("Chat not found or access denied");
-  }
+	// Verify chat ownership
+	const { getLocalChatById } = await import("./chat-actions");
+	const chat = await getLocalChatById(chatId, userId);
+	if (!chat) {
+		throw new Error("Chat not found or access denied");
+	}
 
-  // Delete all messages (parts cascade automatically)
-  await db.delete(message).where(eq(message.chatId, chatId));
+	// Delete all messages (parts cascade automatically)
+	await db.delete(message).where(eq(message.chatId, chatId));
 }
 
 /**
@@ -239,25 +239,25 @@ export async function deleteLocalMessages(
  * @param userId - User ID (for security check)
  */
 export async function deleteLocalMessage(
-  messageId: string,
-  userId: string
+	messageId: string,
+	userId: string,
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  // Get message to verify ownership through chat
-  const msg = await db.query.message.findFirst({
-    where: eq(message.id, messageId),
-    with: {
-      chat: true,
-    },
-  });
+	// Get message to verify ownership through chat
+	const msg = await db.query.message.findFirst({
+		where: eq(message.id, messageId),
+		with: {
+			chat: true,
+		},
+	});
 
-  if (!msg || msg.chat.userId !== userId) {
-    throw new Error("Message not found or access denied");
-  }
+	if (!msg || msg.chat.userId !== userId) {
+		throw new Error("Message not found or access denied");
+	}
 
-  // Delete message (parts cascade automatically)
-  await db.delete(message).where(eq(message.id, messageId));
+	// Delete message (parts cascade automatically)
+	await db.delete(message).where(eq(message.id, messageId));
 }
 
 /**
@@ -270,11 +270,11 @@ export async function deleteLocalMessage(
  * @returns Number of messages in chat
  */
 export async function getLocalMessageCount(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<number> {
-  const messages = await getLocalMessages(chatId, userId);
-  return messages.length;
+	const messages = await getLocalMessages(chatId, userId);
+	return messages.length;
 }
 
 /**
@@ -284,14 +284,14 @@ export async function getLocalMessageCount(
  * @param userId - User ID
  */
 export async function deleteAllLocalMessages(userId: string): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  // Get all chats for user
-  const { getLocalChats } = await import("./chat-actions");
-  const chats = await getLocalChats(userId);
+	// Get all chats for user
+	const { getLocalChats } = await import("./chat-actions");
+	const chats = await getLocalChats(userId);
 
-  // Delete messages for each chat
-  for (const chat of chats) {
-    await db.delete(message).where(eq(message.chatId, chat.id));
-  }
+	// Delete messages for each chat
+	for (const chat of chats) {
+		await db.delete(message).where(eq(message.chatId, chat.id));
+	}
 }

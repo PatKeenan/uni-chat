@@ -1,11 +1,10 @@
-import { createRouter } from "@tanstack/react-router";
-
-// Import the generated route tree
-import { routeTree } from "./routeTree.gen";
-import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { createRouter } from "@tanstack/react-router";
+import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { DefaultCatchBoundary } from "./components/default-catch-boundary";
 import { NotFound } from "./components/not-found";
+// Import the generated route tree
+import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
 	const queryClient = new QueryClient({

@@ -18,35 +18,35 @@ import { chat } from "@/lib/client/db/schema";
  */
 
 export const createLocalChatSchema = z.object({
-  userId: z.string(),
-  title: z.string().optional(),
-  selectedModel: z.string(),
-  folderId: z.string().optional(),
+	userId: z.string(),
+	title: z.string().optional(),
+	selectedModel: z.string(),
+	folderId: z.string().optional(),
 });
 
 export const CreateLocalChatDTO = typeof createLocalChatSchema;
 export async function createLocalChat(data: {
-  userId: string;
-  title?: string;
-  selectedModel: string;
-  folderId?: string | null;
+	userId: string;
+	title?: string;
+	selectedModel: string;
+	folderId?: string | null;
 }): Promise<typeof chat.$inferSelect> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const newChat = {
-    id: nanoid(),
-    userId: data.userId,
-    title: data.title || null,
-    selectedModel: data.selectedModel,
-    folderId: data.folderId || null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    pinned: false,
-  };
+	const newChat = {
+		id: nanoid(),
+		userId: data.userId,
+		title: data.title || null,
+		selectedModel: data.selectedModel,
+		folderId: data.folderId || null,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+		pinned: false,
+	};
 
-  const [created] = await db.insert(chat).values(newChat).returning();
+	const [created] = await db.insert(chat).values(newChat).returning();
 
-  return created;
+	return created;
 }
 
 /**
@@ -57,17 +57,17 @@ export async function createLocalChat(data: {
  * @returns Chat or null if not found
  */
 export async function getLocalChatById(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<typeof chat.$inferSelect | null> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const result = await db.query.chat.findFirst({
-    where: (chat, { eq, and }) =>
-      and(eq(chat.id, chatId), eq(chat.userId, userId)),
-  });
+	const result = await db.query.chat.findFirst({
+		where: (chat, { eq, and }) =>
+			and(eq(chat.id, chatId), eq(chat.userId, userId)),
+	});
 
-  return result || null;
+	return result || null;
 }
 
 /**
@@ -78,34 +78,34 @@ export async function getLocalChatById(
  * @returns Array of chats
  */
 export async function getLocalChats(
-  userId: string,
-  options?: {
-    folderId?: string | null;
-    pinnedOnly?: boolean;
-  }
+	userId: string,
+	options?: {
+		folderId?: string | null;
+		pinnedOnly?: boolean;
+	},
 ): Promise<Array<typeof chat.$inferSelect>> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const conditions = [eq(chat.userId, userId)];
+	const conditions = [eq(chat.userId, userId)];
 
-  if (options?.folderId !== undefined) {
-    if (options.folderId === null) {
-      conditions.push(isNull(chat.folderId));
-    } else {
-      conditions.push(eq(chat.folderId, options.folderId));
-    }
-  }
+	if (options?.folderId !== undefined) {
+		if (options.folderId === null) {
+			conditions.push(isNull(chat.folderId));
+		} else {
+			conditions.push(eq(chat.folderId, options.folderId));
+		}
+	}
 
-  if (options?.pinnedOnly) {
-    conditions.push(eq(chat.pinned, true));
-  }
+	if (options?.pinnedOnly) {
+		conditions.push(eq(chat.pinned, true));
+	}
 
-  const chats = await db.query.chat.findMany({
-    where: and(...conditions),
-    orderBy: [desc(chat.pinned), desc(chat.updatedAt)],
-  });
+	const chats = await db.query.chat.findMany({
+		where: and(...conditions),
+		orderBy: [desc(chat.pinned), desc(chat.updatedAt)],
+	});
 
-  return chats;
+	return chats;
 }
 
 /**
@@ -115,16 +115,16 @@ export async function getLocalChats(
  * @returns Most recent chat or null
  */
 export async function getMostRecentLocalChat(
-  userId: string
+	userId: string,
 ): Promise<typeof chat.$inferSelect | null> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const result = await db.query.chat.findFirst({
-    where: eq(chat.userId, userId),
-    orderBy: desc(chat.updatedAt),
-  });
+	const result = await db.query.chat.findFirst({
+		where: eq(chat.userId, userId),
+		orderBy: desc(chat.updatedAt),
+	});
 
-  return result || null;
+	return result || null;
 }
 
 /**
@@ -135,24 +135,24 @@ export async function getMostRecentLocalChat(
  * @param data - Fields to update
  */
 export async function updateLocalChat(
-  chatId: string,
-  userId: string,
-  data: Partial<{
-    title: string | null;
-    selectedModel: string;
-    folderId: string | null;
-    pinned: boolean;
-  }>
+	chatId: string,
+	userId: string,
+	data: Partial<{
+		title: string | null;
+		selectedModel: string;
+		folderId: string | null;
+		pinned: boolean;
+	}>,
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  await db
-    .update(chat)
-    .set({
-      ...data,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
+	await db
+		.update(chat)
+		.set({
+			...data,
+			updatedAt: new Date(),
+		})
+		.where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
 }
 
 /**
@@ -163,11 +163,11 @@ export async function updateLocalChat(
  * @param title - New title
  */
 export async function updateLocalChatTitle(
-  chatId: string,
-  userId: string,
-  title: string
+	chatId: string,
+	userId: string,
+	title: string,
 ): Promise<void> {
-  await updateLocalChat(chatId, userId, { title });
+	await updateLocalChat(chatId, userId, { title });
 }
 
 /**
@@ -178,11 +178,11 @@ export async function updateLocalChatTitle(
  * @param modelId - New model ID
  */
 export async function updateLocalChatModel(
-  chatId: string,
-  userId: string,
-  modelId: string
+	chatId: string,
+	userId: string,
+	modelId: string,
 ): Promise<void> {
-  await updateLocalChat(chatId, userId, { selectedModel: modelId });
+	await updateLocalChat(chatId, userId, { selectedModel: modelId });
 }
 
 /**
@@ -193,11 +193,11 @@ export async function updateLocalChatModel(
  * @param folderId - Folder ID (null for uncategorized)
  */
 export async function moveLocalChatToFolder(
-  chatId: string,
-  userId: string,
-  folderId: string | null
+	chatId: string,
+	userId: string,
+	folderId: string | null,
 ): Promise<void> {
-  await updateLocalChat(chatId, userId, { folderId });
+	await updateLocalChat(chatId, userId, { folderId });
 }
 
 /**
@@ -208,11 +208,11 @@ export async function moveLocalChatToFolder(
  * @param pinned - New pinned status
  */
 export async function toggleLocalChatPin(
-  chatId: string,
-  userId: string,
-  pinned: boolean
+	chatId: string,
+	userId: string,
+	pinned: boolean,
 ): Promise<void> {
-  await updateLocalChat(chatId, userId, { pinned });
+	await updateLocalChat(chatId, userId, { pinned });
 }
 
 /**
@@ -222,15 +222,15 @@ export async function toggleLocalChatPin(
  * @param userId - User ID
  */
 export async function touchLocalChat(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  await db
-    .update(chat)
-    .set({ updatedAt: new Date() })
-    .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
+	await db
+		.update(chat)
+		.set({ updatedAt: new Date() })
+		.where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
 }
 
 /**
@@ -240,14 +240,14 @@ export async function touchLocalChat(
  * @param userId - User ID (for security check)
  */
 export async function deleteLocalChat(
-  chatId: string,
-  userId: string
+	chatId: string,
+	userId: string,
 ): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  await db
-    .delete(chat)
-    .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
+	await db
+		.delete(chat)
+		.where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
 }
 
 /**
@@ -257,7 +257,7 @@ export async function deleteLocalChat(
  * @param userId - User ID
  */
 export async function deleteAllLocalChats(userId: string): Promise<void> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  await db.delete(chat).where(eq(chat.userId, userId));
+	await db.delete(chat).where(eq(chat.userId, userId));
 }

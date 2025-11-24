@@ -1,49 +1,47 @@
 [
-  {
-    "sql": [
-      "CREATE TABLE \"api_key\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"encrypted_key\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"last_used_at\" timestamp,\n\tCONSTRAINT \"api_key_user_id_unique\" UNIQUE(\"user_id\")\n);\n",
-      "\nCREATE TABLE \"chat\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"folder_id\" text,\n\t\"title\" text,\n\t\"selected_model\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL,\n\t\"pinned\" boolean DEFAULT false NOT NULL\n);\n",
-      "\nCREATE TABLE \"folder\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"name\" text NOT NULL,\n\t\"icon\" text,\n\t\"color\" text,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);\n",
-      "\nCREATE TABLE \"message\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"chat_id\" text NOT NULL,\n\t\"role\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"order\" integer NOT NULL\n);\n",
-      "\nCREATE TABLE \"message_part\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"message_id\" text NOT NULL,\n\t\"type\" text NOT NULL,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"text_content\" text,\n\t\"tool_call_id\" text,\n\t\"tool_call_name\" text,\n\t\"tool_call_args\" json,\n\t\"tool_result_id\" text,\n\t\"tool_result_content\" json,\n\t\"provider_metadata\" json\n);\n",
-      "\nCREATE TABLE \"starred_model\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"model_id\" text NOT NULL,\n\t\"model_name\" text NOT NULL,\n\t\"provider\" text NOT NULL,\n\t\"context_length\" integer,\n\t\"pricing_prompt\" numeric,\n\t\"pricing_completion\" numeric,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\tCONSTRAINT \"starred_model_user_id_model_id_unique\" UNIQUE(\"user_id\",\"model_id\")\n);\n",
-      "\nALTER TABLE \"chat\" ADD CONSTRAINT \"chat_folder_id_folder_id_fk\" FOREIGN KEY (\"folder_id\") REFERENCES \"public\".\"folder\"(\"id\") ON DELETE set null ON UPDATE no action;",
-      "\nALTER TABLE \"message\" ADD CONSTRAINT \"message_chat_id_chat_id_fk\" FOREIGN KEY (\"chat_id\") REFERENCES \"public\".\"chat\"(\"id\") ON DELETE cascade ON UPDATE no action;",
-      "\nALTER TABLE \"message_part\" ADD CONSTRAINT \"message_part_message_id_message_id_fk\" FOREIGN KEY (\"message_id\") REFERENCES \"public\".\"message\"(\"id\") ON DELETE cascade ON UPDATE no action;",
-      "\nCREATE INDEX \"chat_user_updated_idx\" ON \"chat\" USING btree (\"user_id\",\"updated_at\" DESC NULLS LAST);",
-      "\nCREATE INDEX \"chat_user_folder_idx\" ON \"chat\" USING btree (\"user_id\",\"folder_id\");",
-      "\nCREATE INDEX \"message_chat_order_idx\" ON \"message\" USING btree (\"chat_id\",\"order\");",
-      "\nCREATE INDEX \"message_chat_created_idx\" ON \"message\" USING btree (\"chat_id\",\"created_at\");",
-      "\nCREATE INDEX \"message_part_message_order_idx\" ON \"message_part\" USING btree (\"message_id\",\"order\");"
-    ],
-    "bps": true,
-    "folderMillis": 1763401279357,
-    "hash": "70e5539a136f43f58caf36a16b29acfeb0e9d7bc2d665a7cb26692e033814f8d"
-  },
-  {
-    "sql": [
-      "ALTER TABLE \"message\" ADD COLUMN \"model_id\" text;"
-    ],
-    "bps": true,
-    "folderMillis": 1763429683852,
-    "hash": "a454bd44c0ab5cb40cef6c670d20412b418d0e13d9965e21e67603ccb60dd51d"
-  },
-  {
-    "sql": [
-      "ALTER TABLE \"message\" ADD COLUMN \"metadata\" jsonb DEFAULT '{}'::jsonb;",
-      "\nALTER TABLE \"message\" DROP COLUMN \"model_id\";"
-    ],
-    "bps": true,
-    "folderMillis": 1763518264382,
-    "hash": "9f96525b500ae677d0bdee4c15a673963ea93e9d40c71c33fd213a0ae70c5d3b"
-  },
-  {
-    "sql": [
-      "DROP TABLE \"message_part\" CASCADE;",
-      "\nALTER TABLE \"message\" ADD COLUMN \"parts\" jsonb DEFAULT '[]'::jsonb;"
-    ],
-    "bps": true,
-    "folderMillis": 1763518952366,
-    "hash": "4c7f40eaa17e00421c4436d740b0c1480e6657f50aa5d43f59b462c7002917dd"
-  }
+	{
+		"sql": [
+			"CREATE TABLE \"api_key\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"encrypted_key\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"last_used_at\" timestamp,\n\tCONSTRAINT \"api_key_user_id_unique\" UNIQUE(\"user_id\")\n);\n",
+			"\nCREATE TABLE \"chat\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"folder_id\" text,\n\t\"title\" text,\n\t\"selected_model\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL,\n\t\"pinned\" boolean DEFAULT false NOT NULL\n);\n",
+			"\nCREATE TABLE \"folder\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"name\" text NOT NULL,\n\t\"icon\" text,\n\t\"color\" text,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);\n",
+			"\nCREATE TABLE \"message\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"chat_id\" text NOT NULL,\n\t\"role\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"order\" integer NOT NULL\n);\n",
+			"\nCREATE TABLE \"message_part\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"message_id\" text NOT NULL,\n\t\"type\" text NOT NULL,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"text_content\" text,\n\t\"tool_call_id\" text,\n\t\"tool_call_name\" text,\n\t\"tool_call_args\" json,\n\t\"tool_result_id\" text,\n\t\"tool_result_content\" json,\n\t\"provider_metadata\" json\n);\n",
+			"\nCREATE TABLE \"starred_model\" (\n\t\"id\" text PRIMARY KEY NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"model_id\" text NOT NULL,\n\t\"model_name\" text NOT NULL,\n\t\"provider\" text NOT NULL,\n\t\"context_length\" integer,\n\t\"pricing_prompt\" numeric,\n\t\"pricing_completion\" numeric,\n\t\"order\" integer DEFAULT 0 NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\tCONSTRAINT \"starred_model_user_id_model_id_unique\" UNIQUE(\"user_id\",\"model_id\")\n);\n",
+			"\nALTER TABLE \"chat\" ADD CONSTRAINT \"chat_folder_id_folder_id_fk\" FOREIGN KEY (\"folder_id\") REFERENCES \"public\".\"folder\"(\"id\") ON DELETE set null ON UPDATE no action;",
+			"\nALTER TABLE \"message\" ADD CONSTRAINT \"message_chat_id_chat_id_fk\" FOREIGN KEY (\"chat_id\") REFERENCES \"public\".\"chat\"(\"id\") ON DELETE cascade ON UPDATE no action;",
+			"\nALTER TABLE \"message_part\" ADD CONSTRAINT \"message_part_message_id_message_id_fk\" FOREIGN KEY (\"message_id\") REFERENCES \"public\".\"message\"(\"id\") ON DELETE cascade ON UPDATE no action;",
+			"\nCREATE INDEX \"chat_user_updated_idx\" ON \"chat\" USING btree (\"user_id\",\"updated_at\" DESC NULLS LAST);",
+			"\nCREATE INDEX \"chat_user_folder_idx\" ON \"chat\" USING btree (\"user_id\",\"folder_id\");",
+			"\nCREATE INDEX \"message_chat_order_idx\" ON \"message\" USING btree (\"chat_id\",\"order\");",
+			"\nCREATE INDEX \"message_chat_created_idx\" ON \"message\" USING btree (\"chat_id\",\"created_at\");",
+			"\nCREATE INDEX \"message_part_message_order_idx\" ON \"message_part\" USING btree (\"message_id\",\"order\");"
+		],
+		"bps": true,
+		"folderMillis": 1763401279357,
+		"hash": "70e5539a136f43f58caf36a16b29acfeb0e9d7bc2d665a7cb26692e033814f8d"
+	},
+	{
+		"sql": ["ALTER TABLE \"message\" ADD COLUMN \"model_id\" text;"],
+		"bps": true,
+		"folderMillis": 1763429683852,
+		"hash": "a454bd44c0ab5cb40cef6c670d20412b418d0e13d9965e21e67603ccb60dd51d"
+	},
+	{
+		"sql": [
+			"ALTER TABLE \"message\" ADD COLUMN \"metadata\" jsonb DEFAULT '{}'::jsonb;",
+			"\nALTER TABLE \"message\" DROP COLUMN \"model_id\";"
+		],
+		"bps": true,
+		"folderMillis": 1763518264382,
+		"hash": "9f96525b500ae677d0bdee4c15a673963ea93e9d40c71c33fd213a0ae70c5d3b"
+	},
+	{
+		"sql": [
+			"DROP TABLE \"message_part\" CASCADE;",
+			"\nALTER TABLE \"message\" ADD COLUMN \"parts\" jsonb DEFAULT '[]'::jsonb;"
+		],
+		"bps": true,
+		"folderMillis": 1763518952366,
+		"hash": "4c7f40eaa17e00421c4436d740b0c1480e6657f50aa5d43f59b462c7002917dd"
+	}
 ]

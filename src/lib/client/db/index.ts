@@ -26,45 +26,45 @@ let initPromise: Promise<void> | null = null;
  * - Creates Drizzle instance
  */
 async function initializeClientDb(): Promise<void> {
-  if (clientDb) {
-    return;
-  }
+	if (clientDb) {
+		return;
+	}
 
-  console.log("[ClientDB] Initializing PGlite database...");
+	console.log("[ClientDB] Initializing PGlite database...");
 
-  try {
-    // Using IndexedDB for persistent storage
-    console.log(
-      "[ClientDB] Creating PGlite instance with IndexedDB persistence..."
-    );
-    pgliteClient = await PGlite.create({
-      dataDir: "idb://uni-chat-local",
-    });
-    console.log(
-      "[ClientDB] PGlite instance created with IndexedDB persistence"
-    );
+	try {
+		// Using IndexedDB for persistent storage
+		console.log(
+			"[ClientDB] Creating PGlite instance with IndexedDB persistence...",
+		);
+		pgliteClient = await PGlite.create({
+			dataDir: "idb://uni-chat-local",
+		});
+		console.log(
+			"[ClientDB] PGlite instance created with IndexedDB persistence",
+		);
 
-    // Run migrations before creating Drizzle instance
-    console.log("[ClientDB] Running migrations...");
-    const { runMigrations } = await import("./migrations");
-    await runMigrations(pgliteClient);
-    console.log("[ClientDB] Migrations complete");
+		// Run migrations before creating Drizzle instance
+		console.log("[ClientDB] Running migrations...");
+		const { runMigrations } = await import("./migrations");
+		await runMigrations(pgliteClient);
+		console.log("[ClientDB] Migrations complete");
 
-    // Create Drizzle instance
-    console.log("[ClientDB] Creating Drizzle instance...");
-    clientDb = drizzle(pgliteClient, { schema });
+		// Create Drizzle instance
+		console.log("[ClientDB] Creating Drizzle instance...");
+		clientDb = drizzle(pgliteClient, { schema });
 
-    console.log("[ClientDB] Database initialized successfully");
-  } catch (error) {
-    console.error("[ClientDB] Failed to initialize database:", error);
-    // Reset state on error
-    clientDb = null;
-    pgliteClient = null;
-    initPromise = null;
-    throw new Error(
-      "Failed to initialize client database. Please refresh the page."
-    );
-  }
+		console.log("[ClientDB] Database initialized successfully");
+	} catch (error) {
+		console.error("[ClientDB] Failed to initialize database:", error);
+		// Reset state on error
+		clientDb = null;
+		pgliteClient = null;
+		initPromise = null;
+		throw new Error(
+			"Failed to initialize client database. Please refresh the page.",
+		);
+	}
 }
 
 /**
@@ -77,19 +77,19 @@ async function initializeClientDb(): Promise<void> {
  * @throws Error if initialization fails
  */
 export async function getClientDb(): Promise<PgliteDatabase<typeof schema>> {
-  // If not initialized, start initialization
-  if (!clientDb) {
-    if (!initPromise) {
-      initPromise = initializeClientDb();
-    }
-    await initPromise;
-  }
+	// If not initialized, start initialization
+	if (!clientDb) {
+		if (!initPromise) {
+			initPromise = initializeClientDb();
+		}
+		await initPromise;
+	}
 
-  if (!clientDb) {
-    throw new Error("Client database not initialized");
-  }
+	if (!clientDb) {
+		throw new Error("Client database not initialized");
+	}
 
-  return clientDb;
+	return clientDb;
 }
 
 /**
@@ -101,14 +101,14 @@ export async function getClientDb(): Promise<PgliteDatabase<typeof schema>> {
  * @returns PGlite client instance
  */
 export async function getPgliteClient(): Promise<PGlite> {
-  // Ensure database is initialized
-  await getClientDb();
+	// Ensure database is initialized
+	await getClientDb();
 
-  if (!pgliteClient) {
-    throw new Error("PGlite client not initialized");
-  }
+	if (!pgliteClient) {
+		throw new Error("PGlite client not initialized");
+	}
 
-  return pgliteClient;
+	return pgliteClient;
 }
 
 /**
@@ -125,43 +125,43 @@ export async function getPgliteClient(): Promise<PGlite> {
  * - Testing
  */
 export async function resetClientDb(): Promise<void> {
-  try {
-    console.log("[ClientDB] Resetting database...");
+	try {
+		console.log("[ClientDB] Resetting database...");
 
-    // Reset singleton instances
-    clientDb = null;
-    pgliteClient = null;
-    initPromise = null;
+		// Reset singleton instances
+		clientDb = null;
+		pgliteClient = null;
+		initPromise = null;
 
-    // Delete IndexedDB database
-    if (typeof indexedDB !== "undefined") {
-      await new Promise<void>((resolve, reject) => {
-        const request = indexedDB.deleteDatabase("uni-chat-local");
-        request.onsuccess = () => {
-          console.log("[ClientDB] IndexedDB deleted successfully");
-          resolve();
-        };
-        request.onerror = () => {
-          console.error(
-            "[ClientDB] Failed to delete IndexedDB:",
-            request.error
-          );
-          reject(request.error);
-        };
-        request.onblocked = () => {
-          console.warn(
-            "[ClientDB] Database deletion blocked. Close all tabs and try again."
-          );
-          reject(new Error("Database deletion blocked"));
-        };
-      });
-    }
+		// Delete IndexedDB database
+		if (typeof indexedDB !== "undefined") {
+			await new Promise<void>((resolve, reject) => {
+				const request = indexedDB.deleteDatabase("uni-chat-local");
+				request.onsuccess = () => {
+					console.log("[ClientDB] IndexedDB deleted successfully");
+					resolve();
+				};
+				request.onerror = () => {
+					console.error(
+						"[ClientDB] Failed to delete IndexedDB:",
+						request.error,
+					);
+					reject(request.error);
+				};
+				request.onblocked = () => {
+					console.warn(
+						"[ClientDB] Database deletion blocked. Close all tabs and try again.",
+					);
+					reject(new Error("Database deletion blocked"));
+				};
+			});
+		}
 
-    console.log("[ClientDB] Database reset complete");
-  } catch (error) {
-    console.error("[ClientDB] Error resetting database:", error);
-    throw error;
-  }
+		console.log("[ClientDB] Database reset complete");
+	} catch (error) {
+		console.error("[ClientDB] Error resetting database:", error);
+		throw error;
+	}
 }
 
 /**
@@ -173,32 +173,32 @@ export async function resetClientDb(): Promise<void> {
  * @returns Storage usage stats
  */
 export async function getStorageUsage(): Promise<{
-  used: number;
-  quota: number;
-  percentUsed: number;
+	used: number;
+	quota: number;
+	percentUsed: number;
 }> {
-  if ("storage" in navigator && "estimate" in navigator.storage) {
-    try {
-      const estimate = await navigator.storage.estimate();
-      const used = estimate.usage || 0;
-      const quota = estimate.quota || 0;
-      const percentUsed = quota > 0 ? (used / quota) * 100 : 0;
+	if ("storage" in navigator && "estimate" in navigator.storage) {
+		try {
+			const estimate = await navigator.storage.estimate();
+			const used = estimate.usage || 0;
+			const quota = estimate.quota || 0;
+			const percentUsed = quota > 0 ? (used / quota) * 100 : 0;
 
-      return {
-        used,
-        quota,
-        percentUsed,
-      };
-    } catch (error) {
-      console.error("[ClientDB] Failed to get storage estimate:", error);
-    }
-  }
+			return {
+				used,
+				quota,
+				percentUsed,
+			};
+		} catch (error) {
+			console.error("[ClientDB] Failed to get storage estimate:", error);
+		}
+	}
 
-  return {
-    used: 0,
-    quota: 0,
-    percentUsed: 0,
-  };
+	return {
+		used: 0,
+		quota: 0,
+		percentUsed: 0,
+	};
 }
 
 /**
@@ -208,10 +208,10 @@ export async function getStorageUsage(): Promise<{
  * @returns true if approaching limit
  */
 export async function isStorageNearLimit(
-  thresholdPercent = 80
+	thresholdPercent = 80,
 ): Promise<boolean> {
-  const { percentUsed } = await getStorageUsage();
-  return percentUsed >= thresholdPercent;
+	const { percentUsed } = await getStorageUsage();
+	return percentUsed >= thresholdPercent;
 }
 
 /**
@@ -221,11 +221,11 @@ export async function isStorageNearLimit(
  * @returns Formatted string (e.g., "1.5 MB")
  */
 export function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
+	if (bytes === 0) return "0 Bytes";
 
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+	const k = 1024;
+	const sizes = ["Bytes", "KB", "MB", "GB"];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+	return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }

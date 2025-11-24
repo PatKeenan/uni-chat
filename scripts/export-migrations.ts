@@ -11,14 +11,14 @@
  * Run this script automatically after `pnpm db:generate`
  */
 
-import { readMigrationFiles } from 'drizzle-orm/migrator';
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { readMigrationFiles } from "drizzle-orm/migrator";
 
-const MIGRATIONS_FOLDER = './drizzle/migrations-client';
+const MIGRATIONS_FOLDER = "./drizzle/migrations-client";
 
 try {
-	console.log('📦 Exporting migrations to JSON...');
+	console.log("📦 Exporting migrations to JSON...");
 
 	// Read all migration files
 	const migrations = readMigrationFiles({
@@ -28,13 +28,17 @@ try {
 	console.log(`✓ Found ${migrations.length} migration(s)`);
 
 	// Export to JSON
-	const outputPath = path.join(process.cwd(), MIGRATIONS_FOLDER, 'migrations.json');
+	const outputPath = path.join(
+		process.cwd(),
+		MIGRATIONS_FOLDER,
+		"migrations.json",
+	);
 
 	writeFileSync(outputPath, JSON.stringify(migrations, null, 2));
 
 	console.log(`✓ Migrations exported to ${outputPath}`);
-	console.log('\n✅ Migration export complete!');
+	console.log("\n✅ Migration export complete!");
 } catch (error) {
-	console.error('❌ Failed to export migrations:', error);
+	console.error("❌ Failed to export migrations:", error);
 	process.exit(1);
 }

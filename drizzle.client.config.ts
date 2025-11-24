@@ -7,10 +7,10 @@
  * Server database uses the main drizzle.config.ts
  */
 
-import { defineConfig } from 'drizzle-kit';
+import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-	dialect: 'postgresql',
-	schema: './src/lib/client/db/schema/client-only.ts',
-	out: './drizzle/migrations-client',
+	dialect: "postgresql",
+	schema: "./src/lib/client/db/schema/client-only.ts",
+	out: "./drizzle/migrations-client",
 });

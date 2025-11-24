@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
  * Redirects to the most recent chat, or shows empty state if no chats exist
  */
 export const Route = createFileRoute("/dashboard/")({
-  loader: async () => {
-    /*  // Try to get the most recent chat
+	loader: async () => {
+		/*  // Try to get the most recent chat
     const recentChat = await getMostRecentChat();
 
     if (recentChat) {
@@ -18,24 +18,24 @@ export const Route = createFileRoute("/dashboard/")({
       });
     } */
 
-    // No chats exist, show empty state
-    return { hasChats: false };
-  },
-  component: DashboardIndex,
+		// No chats exist, show empty state
+		return { hasChats: false };
+	},
+	component: DashboardIndex,
 });
 
 function DashboardIndex() {
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold mb-4">Welcome to Uni-Chat</h2>
-        <p className="text-muted-foreground mb-6">
-          Start a conversation with any AI model
-        </p>
-        <Button asChild>
-          <Link to="/dashboard/new">New Chat</Link>
-        </Button>
-      </div>
-    </div>
-  );
+	return (
+		<div className="flex flex-1 items-center justify-center">
+			<div className="text-center">
+				<h2 className="text-2xl font-semibold mb-4">Welcome to Uni-Chat</h2>
+				<p className="text-muted-foreground mb-6">
+					Start a conversation with any AI model
+				</p>
+				<Button asChild>
+					<Link to="/dashboard/new">New Chat</Link>
+				</Button>
+			</div>
+		</div>
+	);
 }

@@ -5,32 +5,35 @@
  * caching, and automatic refetching for local PGlite database operations.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createLocalChat,
-	getLocalChats,
+	deleteAllLocalChats,
+	deleteLocalChat,
 	getLocalChatById,
+	getLocalChats,
 	getMostRecentLocalChat,
-	updateLocalChat,
-	updateLocalChatTitle,
-	updateLocalChatModel,
 	moveLocalChatToFolder,
 	toggleLocalChatPin,
-	deleteLocalChat,
-	deleteAllLocalChats,
-} from '@/lib/client/actions/chat-actions';
-import type { chat } from '@/lib/client/db/schema';
+	updateLocalChat,
+	updateLocalChatModel,
+	updateLocalChatTitle,
+} from "@/lib/client/actions/chat-actions";
+import type { chat } from "@/lib/client/db/schema";
 
 /**
  * Query keys for chat operations
  */
 export const chatKeys = {
-	all: (userId: string) => ['local-chats', userId] as const,
-	lists: (userId: string) => [...chatKeys.all(userId), 'list'] as const,
-	list: (userId: string, filters?: { folderId?: string | null; pinnedOnly?: boolean }) =>
-		[...chatKeys.lists(userId), filters] as const,
-	details: (userId: string) => [...chatKeys.all(userId), 'detail'] as const,
-	detail: (userId: string, chatId: string) => [...chatKeys.details(userId), chatId] as const,
+	all: (userId: string) => ["local-chats", userId] as const,
+	lists: (userId: string) => [...chatKeys.all(userId), "list"] as const,
+	list: (
+		userId: string,
+		filters?: { folderId?: string | null; pinnedOnly?: boolean },
+	) => [...chatKeys.lists(userId), filters] as const,
+	details: (userId: string) => [...chatKeys.all(userId), "detail"] as const,
+	detail: (userId: string, chatId: string) =>
+		[...chatKeys.details(userId), chatId] as const,
 };
 
 /**
@@ -44,7 +47,7 @@ export function useLocalChats(
 	options?: {
 		folderId?: string | null;
 		pinnedOnly?: boolean;
-	}
+	},
 ) {
 	return useQuery({
 		queryKey: chatKeys.list(userId, options),
@@ -74,7 +77,7 @@ export function useLocalChat(chatId: string, userId: string) {
  */
 export function useMostRecentLocalChat(userId: string) {
 	return useQuery({
-		queryKey: [...chatKeys.all(userId), 'most-recent'],
+		queryKey: [...chatKeys.all(userId), "most-recent"],
 		queryFn: () => getMostRecentLocalChat(userId),
 		enabled: !!userId,
 	});
@@ -131,11 +134,13 @@ export function useUpdateLocalChat(userId: string) {
 		}) => updateLocalChat(chatId, userId, data),
 		onMutate: async ({ chatId, data }) => {
 			// Cancel outgoing refetches
-			await queryClient.cancelQueries({ queryKey: chatKeys.detail(userId, chatId) });
+			await queryClient.cancelQueries({
+				queryKey: chatKeys.detail(userId, chatId),
+			});
 
 			// Snapshot previous value
 			const previousChat = queryClient.getQueryData<typeof chat.$inferSelect>(
-				chatKeys.detail(userId, chatId)
+				chatKeys.detail(userId, chatId),
 			);
 
 			// Optimistically update
@@ -154,13 +159,15 @@ export function useUpdateLocalChat(userId: string) {
 			if (context?.previousChat) {
 				queryClient.setQueryData(
 					chatKeys.detail(userId, chatId),
-					context.previousChat
+					context.previousChat,
 				);
 			}
 		},
 		onSettled: (_data, _error, { chatId }) => {
 			// Refetch to ensure consistency
-			queryClient.invalidateQueries({ queryKey: chatKeys.detail(userId, chatId) });
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.detail(userId, chatId),
+			});
 			queryClient.invalidateQueries({ queryKey: chatKeys.lists(userId) });
 		},
 	});
@@ -176,7 +183,9 @@ export function useUpdateLocalChatTitle(userId: string) {
 		mutationFn: ({ chatId, title }: { chatId: string; title: string }) =>
 			updateLocalChatTitle(chatId, userId, title),
 		onSuccess: (_, { chatId }) => {
-			queryClient.invalidateQueries({ queryKey: chatKeys.detail(userId, chatId) });
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.detail(userId, chatId),
+			});
 			queryClient.invalidateQueries({ queryKey: chatKeys.lists(userId) });
 		},
 	});
@@ -192,7 +201,9 @@ export function useUpdateLocalChatModel(userId: string) {
 		mutationFn: ({ chatId, modelId }: { chatId: string; modelId: string }) =>
 			updateLocalChatModel(chatId, userId, modelId),
 		onSuccess: (_, { chatId }) => {
-			queryClient.invalidateQueries({ queryKey: chatKeys.detail(userId, chatId) });
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.detail(userId, chatId),
+			});
 		},
 	});
 }
@@ -204,8 +215,13 @@ export function useMoveLocalChatToFolder(userId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ chatId, folderId }: { chatId: string; folderId: string | null }) =>
-			moveLocalChatToFolder(chatId, userId, folderId),
+		mutationFn: ({
+			chatId,
+			folderId,
+		}: {
+			chatId: string;
+			folderId: string | null;
+		}) => moveLocalChatToFolder(chatId, userId, folderId),
 		onSuccess: () => {
 			// Invalidate all lists since folder filter affects results
 			queryClient.invalidateQueries({ queryKey: chatKeys.lists(userId) });

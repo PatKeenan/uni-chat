@@ -5,10 +5,10 @@
  * Folders organize chats into categories - all operations are client-side only.
  */
 
-import { nanoid } from 'nanoid';
-import { desc, eq, and } from 'drizzle-orm';
-import { getClientDb } from '@/lib/client/db';
-import { folder } from '@/lib/client/db/schema';
+import { and, desc, eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
+import { getClientDb } from "@/lib/client/db";
+import { folder } from "@/lib/client/db/schema";
 
 /**
  * Create a new folder
@@ -46,7 +46,7 @@ export async function createLocalFolder(data: {
  */
 export async function getLocalFolderById(
 	folderId: string,
-	userId: string
+	userId: string,
 ): Promise<typeof folder.$inferSelect | null> {
 	const db = await getClientDb();
 
@@ -65,7 +65,7 @@ export async function getLocalFolderById(
  * @returns Array of folders sorted by name
  */
 export async function getLocalFolders(
-	userId: string
+	userId: string,
 ): Promise<Array<typeof folder.$inferSelect>> {
 	const db = await getClientDb();
 
@@ -86,15 +86,13 @@ export async function getLocalFolders(
  * @returns Array of folders with chat counts
  */
 export async function getLocalFoldersWithCounts(
-	userId: string
-): Promise<
-	Array<typeof folder.$inferSelect & { chatCount: number }>
-> {
+	userId: string,
+): Promise<Array<typeof folder.$inferSelect & { chatCount: number }>> {
 	// Get all folders
 	const folders = await getLocalFolders(userId);
 
 	// Get chat counts for each folder
-	const { getLocalChats } = await import('./chat-actions');
+	const { getLocalChats } = await import("./chat-actions");
 	const foldersWithCounts = await Promise.all(
 		folders.map(async (folder) => {
 			const chats = await getLocalChats(userId, {
@@ -104,7 +102,7 @@ export async function getLocalFoldersWithCounts(
 				...folder,
 				chatCount: chats.length,
 			};
-		})
+		}),
 	);
 
 	return foldersWithCounts;
@@ -123,7 +121,7 @@ export async function updateLocalFolder(
 	data: Partial<{
 		name: string;
 		color: string | null;
-	}>
+	}>,
 ): Promise<void> {
 	const db = await getClientDb();
 
@@ -146,7 +144,7 @@ export async function updateLocalFolder(
 export async function updateLocalFolderName(
 	folderId: string,
 	userId: string,
-	name: string
+	name: string,
 ): Promise<void> {
 	await updateLocalFolder(folderId, userId, { name });
 }
@@ -161,7 +159,7 @@ export async function updateLocalFolderName(
 export async function updateLocalFolderColor(
 	folderId: string,
 	userId: string,
-	color: string | null
+	color: string | null,
 ): Promise<void> {
 	await updateLocalFolder(folderId, userId, { color });
 }
@@ -177,7 +175,7 @@ export async function updateLocalFolderColor(
  */
 export async function deleteLocalFolder(
 	folderId: string,
-	userId: string
+	userId: string,
 ): Promise<void> {
 	const db = await getClientDb();
 
@@ -212,7 +210,7 @@ export async function deleteAllLocalFolders(userId: string): Promise<void> {
 export async function folderNameExists(
 	userId: string,
 	name: string,
-	excludeFolderId?: string
+	excludeFolderId?: string,
 ): Promise<boolean> {
 	const db = await getClientDb();
 
@@ -220,7 +218,7 @@ export async function folderNameExists(
 
 	// Exclude specific folder ID if provided (for rename check)
 	if (excludeFolderId) {
-		const { ne } = await import('drizzle-orm');
+		const { ne } = await import("drizzle-orm");
 		conditions.push(ne(folder.id, excludeFolderId));
 	}
 
@@ -240,7 +238,7 @@ export async function folderNameExists(
  */
 export async function getLocalFolderByName(
 	userId: string,
-	name: string
+	name: string,
 ): Promise<typeof folder.$inferSelect | null> {
 	const db = await getClientDb();
 

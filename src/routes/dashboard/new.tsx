@@ -1,11 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-import { getSession } from "@/lib/client/auth-client";
-import { createLocalChat } from "@/lib/client/actions/chat-actions";
-import { useStarredModels } from "@/lib/client/hooks/use-models";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
-import { getDefaultModel } from "@/lib/client/storage/default-model";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,13 +10,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { createLocalChat } from "@/lib/client/actions/chat-actions";
+import { getSession } from "@/lib/client/auth-client";
+import { useStarredModels } from "@/lib/client/hooks/use-models";
+import { getApiKey } from "@/lib/client/storage/api-key";
+import { getDefaultModel } from "@/lib/client/storage/default-model";
+import { hasApiKey } from "@/lib/server/actions/api-key-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/new")({
   loader: async () => {
     // Check if user has API key
     const hasKey = await hasApiKey();
-    if (!hasKey) {
+    const localKey = getApiKey();
+    if (!hasKey && !localKey) {
       throw redirect({ to: "/dashboard/settings" });
     }
     return {};

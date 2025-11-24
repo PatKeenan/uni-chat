@@ -18,15 +18,15 @@
 
 import { relations } from "drizzle-orm";
 import {
-  boolean,
-  index,
-  integer,
-  jsonb,
-  numeric,
-  pgTable,
-  text,
-  timestamp,
-  unique,
+	boolean,
+	index,
+	integer,
+	jsonb,
+	numeric,
+	pgTable,
+	text,
+	timestamp,
+	unique,
 } from "drizzle-orm/pg-core";
 import type { CustomUIMessage } from "../../types";
 
@@ -41,15 +41,15 @@ import type { CustomUIMessage } from "../../types";
  * The key is encrypted using Web Crypto API before storage.
  */
 export const apiKey = pgTable(
-  "api_key",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id").notNull(), // No FK - user table is server-side
-    encryptedKey: text("encrypted_key").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    lastUsedAt: timestamp("last_used_at"),
-  },
-  (table) => [unique().on(table.userId)]
+	"api_key",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id").notNull(), // No FK - user table is server-side
+		encryptedKey: text("encrypted_key").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		lastUsedAt: timestamp("last_used_at"),
+	},
+	(table) => [unique().on(table.userId)],
 );
 
 export type DB_API_Key = typeof apiKey.$inferSelect;
@@ -61,17 +61,17 @@ export type DB_API_Key = typeof apiKey.$inferSelect;
  * Organizes chats into folders for better organization.
  */
 export const folder = pgTable("folder", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(), // No FK - user table is server-side
-  name: text("name").notNull(),
-  icon: text("icon"),
-  color: text("color"),
-  order: integer("order").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
+	id: text("id").primaryKey(),
+	userId: text("user_id").notNull(), // No FK - user table is server-side
+	name: text("name").notNull(),
+	icon: text("icon"),
+	color: text("color"),
+	order: integer("order").default(0).notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
+		.notNull(),
 });
 
 export type DB_Folder = typeof folder.$inferSelect;
@@ -82,26 +82,26 @@ export type DB_Folder = typeof folder.$inferSelect;
  * Represents a chat conversation with an AI model.
  */
 export const chat = pgTable(
-  "chat",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id").notNull(), // No FK - user table is server-side
-    folderId: text("folder_id").references(() => folder.id, {
-      onDelete: "set null",
-    }),
-    title: text("title"),
-    selectedModel: text("selected_model").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-    pinned: boolean("pinned").default(false).notNull(),
-  },
-  (table) => [
-    index("chat_user_updated_idx").on(table.userId, table.updatedAt.desc()),
-    index("chat_user_folder_idx").on(table.userId, table.folderId),
-  ]
+	"chat",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id").notNull(), // No FK - user table is server-side
+		folderId: text("folder_id").references(() => folder.id, {
+			onDelete: "set null",
+		}),
+		title: text("title"),
+		selectedModel: text("selected_model").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+		pinned: boolean("pinned").default(false).notNull(),
+	},
+	(table) => [
+		index("chat_user_updated_idx").on(table.userId, table.updatedAt.desc()),
+		index("chat_user_folder_idx").on(table.userId, table.folderId),
+	],
 );
 
 export type DB_Chat = typeof chat.$inferSelect;
@@ -115,22 +115,22 @@ export type DB_Chat = typeof chat.$inferSelect;
  * Compatible with AI SDK UIMessage format.
  */
 export const message = pgTable(
-  "message",
-  {
-    id: text("id").primaryKey(),
-    chatId: text("chat_id")
-      .notNull()
-      .references(() => chat.id, { onDelete: "cascade" }),
-    role: text("role").notNull(), // 'user' | 'assistant' | 'system'
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    order: integer("order").notNull(),
-    parts: jsonb("parts").$type<CustomUIMessage["parts"]>().default([]),
-    metadata: jsonb("metadata").$type<{ modelName?: string }>().default({}),
-  },
-  (table) => [
-    index("message_chat_order_idx").on(table.chatId, table.order),
-    index("message_chat_created_idx").on(table.chatId, table.createdAt),
-  ]
+	"message",
+	{
+		id: text("id").primaryKey(),
+		chatId: text("chat_id")
+			.notNull()
+			.references(() => chat.id, { onDelete: "cascade" }),
+		role: text("role").notNull(), // 'user' | 'assistant' | 'system'
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		order: integer("order").notNull(),
+		parts: jsonb("parts").$type<CustomUIMessage["parts"]>().default([]),
+		metadata: jsonb("metadata").$type<{ modelName?: string }>().default({}),
+	},
+	(table) => [
+		index("message_chat_order_idx").on(table.chatId, table.order),
+		index("message_chat_created_idx").on(table.chatId, table.createdAt),
+	],
 );
 
 export type DB_Message = typeof message.$inferSelect;
@@ -143,20 +143,20 @@ export type DB_Message = typeof message.$inferSelect;
  * Stores user's favorite AI models for quick access.
  */
 export const starredModel = pgTable(
-  "starred_model",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id").notNull(), // No FK - user table is server-side
-    modelId: text("model_id").notNull(),
-    modelName: text("model_name").notNull(),
-    provider: text("provider").notNull(),
-    contextLength: integer("context_length"),
-    pricingPrompt: numeric("pricing_prompt"),
-    pricingCompletion: numeric("pricing_completion"),
-    order: integer("order").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [unique().on(table.userId, table.modelId)]
+	"starred_model",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id").notNull(), // No FK - user table is server-side
+		modelId: text("model_id").notNull(),
+		modelName: text("model_name").notNull(),
+		provider: text("provider").notNull(),
+		contextLength: integer("context_length"),
+		pricingPrompt: numeric("pricing_prompt"),
+		pricingCompletion: numeric("pricing_completion"),
+		order: integer("order").default(0).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [unique().on(table.userId, table.modelId)],
 );
 
 export type DB_Starred_Model = typeof starredModel.$inferSelect;
@@ -164,22 +164,22 @@ export type DB_Starred_Model = typeof starredModel.$inferSelect;
 // ==================== Relations ====================
 
 export const folderRelations = relations(folder, ({ many }) => ({
-  chats: many(chat),
+	chats: many(chat),
 }));
 
 export const chatRelations = relations(chat, ({ one, many }) => ({
-  folder: one(folder, {
-    fields: [chat.folderId],
-    references: [folder.id],
-  }),
-  messages: many(message),
+	folder: one(folder, {
+		fields: [chat.folderId],
+		references: [folder.id],
+	}),
+	messages: many(message),
 }));
 
 export const messageRelations = relations(message, ({ one, many }) => ({
-  chat: one(chat, {
-    fields: [message.chatId],
-    references: [chat.id],
-  }),
+	chat: one(chat, {
+		fields: [message.chatId],
+		references: [chat.id],
+	}),
 }));
 
 // Note: No relations to user table since it lives in server database
