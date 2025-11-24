@@ -4,9 +4,14 @@ import {
   pruneMessages,
   stepCountIs,
   streamText,
+  type UIMessage,
 } from "ai";
 import type { DB_Message } from "@/lib/client/db/schema";
-import type { CustomUIMessage } from "@/lib/client/types";
+import type {
+  ChatMessageParts,
+  CustomUIMessage,
+  CustomUIMessageData,
+} from "@/lib/client/types";
 import { toUiMessages } from "@/lib/client/utils/to-ui-message";
 import { createOpenRouterClient } from "@/lib/openrouter/client";
 import { initWebSearchTool } from "@/lib/server/ai-tools/web-search";
@@ -72,8 +77,8 @@ export const Route = createFileRoute("/api/chat")({
           const uiMessages = toUiMessages(messages);
 
           // Convert UIMessage to model messages using AI SDK utility
-          const modelMessages =
-            convertToModelMessages<CustomUIMessage>(uiMessages);
+          // @ts-expect-error - TODO: there seems to be a type issue here. AI sdk does not want to accept our custom type even though its valid.
+          const modelMessages = convertToModelMessages(uiMessages);
           const prunedMessages = pruneMessages({
             messages: modelMessages,
             reasoning: "before-last-message",

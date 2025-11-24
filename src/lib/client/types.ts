@@ -1,4 +1,5 @@
 import type { UIMessage } from "@ai-sdk/react";
+import type { UIDataTypes, UIMessagePart, UITools } from "ai";
 import type { User } from "better-auth";
 import type {
   DB_Chat,
@@ -15,12 +16,17 @@ type UserId = User["id"];
 type Models = Awaited<ReturnType<typeof getOpenRouterModels>>["data"];
 type Model = Models[number];
 type ModelName = Model["canonicalSlug"];
-
+type ChatMessageParts = UIDataTypes;
 type CustomUIMessageData = {
   modelName?: ModelName;
 };
 
-type CustomUIMessage = UIMessage<CustomUIMessageData>;
+type CustomUIMessagePart = UIMessagePart<UIDataTypes, UITools>;
+type CustomUIMessage = UIMessage<
+  CustomUIMessageData,
+  CustomUIMessagePart,
+  UITools
+>;
 
 export type {
   ChatId,
@@ -31,6 +37,8 @@ export type {
   // Messages
   CustomUIMessage,
   CustomUIMessageData,
+  CustomUIMessagePart,
+  ChatMessageParts,
   // Database types
   DB_Chat,
   DB_Message,
