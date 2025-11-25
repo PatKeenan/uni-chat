@@ -43,17 +43,17 @@ export function NavUser({
 					<DropdownMenuTrigger asChild>
 						<SidebarMenuButton
 							size="lg"
-							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+							className="bg-[rgba(250,248,245,0.04)] hover:bg-[rgba(250,248,245,0.08)] data-[state=open]:bg-[rgba(250,248,245,0.08)] transition-all duration-200 rounded-xl"
 						>
-							<Avatar className="h-8 w-8 rounded-lg">
+							<Avatar className="h-9 w-9 rounded-[10px]">
 								<AvatarImage src={user.avatar ?? ""} alt={user.name ?? ""} />
-								<AvatarFallback className="rounded-lg">
+								<AvatarFallback className="rounded-[10px] bg-linear-to-br from-warm-500 to-warm-700 text-warm-foreground font-semibold text-[0.875rem]">
 									{user.name?.charAt(0) ?? ""}
 								</AvatarFallback>
 							</Avatar>
 							<div className="grid flex-1 text-left text-sm leading-tight">
-								<span className="truncate font-medium">{user.name ?? ""}</span>
-								<span className="truncate text-xs">{user.email ?? ""}</span>
+								<span className="truncate font-medium text-[0.875rem]">{user.name ?? ""}</span>
+								<span className="truncate text-[0.75rem] opacity-50">{user.email ?? ""}</span>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4" />
 						</SidebarMenuButton>
@@ -66,13 +66,15 @@ export function NavUser({
 					>
 						<DropdownMenuLabel className="p-0 font-normal">
 							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-								<Avatar className="h-8 w-8 rounded-lg">
+								<Avatar className="h-8 w-8 rounded-[10px]">
 									<AvatarImage src={user.avatar} alt={user.name} />
-									<AvatarFallback className="rounded-lg">CN</AvatarFallback>
+									<AvatarFallback className="rounded-[10px] bg-linear-to-br from-warm-500 to-warm-700 text-warm-foreground font-semibold text-[0.875rem]">
+										{user.name?.charAt(0) ?? ""}
+									</AvatarFallback>
 								</Avatar>
 								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-medium">{user.name}</span>
-									<span className="truncate text-xs">{user.email}</span>
+									<span className="truncate font-medium text-[0.875rem]">{user.name}</span>
+									<span className="truncate text-xs opacity-70">{user.email}</span>
 								</div>
 							</div>
 						</DropdownMenuLabel>

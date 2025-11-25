@@ -12,105 +12,104 @@
 
 import { asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 import { getClientDb } from "@/lib/client/db";
 import { message } from "@/lib/client/db/schema";
 import type { CustomUIMessage, DB_Message } from "../types";
-/**
- * Internal message type from database
- */
-//type DbMessagePart = typeof messagePart.$inferSelect;
 
-/**
- * Message with parts joined
- */
+// ==================== Schemas ====================
+
+export const SaveLocalMessagesSchema = z.object({
+  chatId: z.string().min(1, "Chat ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+  messages: z.custom<CustomUIMessage[]>(
+    (val) => Array.isArray(val),
+    "Messages must be an array"
+  ),
+});
+
+export const GetLocalMessagesSchema = z.object({
+  chatId: z.string().min(1, "Chat ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const GetUIMessagesSchema = z.object({
+  chatId: z.string().min(1, "Chat ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const DeleteLocalMessagesSchema = z.object({
+  chatId: z.string().min(1, "Chat ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const DeleteLocalMessageSchema = z.object({
+  messageId: z.string().min(1, "Message ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const GetLocalMessageCountSchema = z.object({
+  chatId: z.string().min(1, "Chat ID is required"),
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const DeleteAllLocalMessagesSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+});
+
+// ==================== Types ====================
+
+export type SaveLocalMessagesInput = z.infer<typeof SaveLocalMessagesSchema>;
+export type GetLocalMessagesInput = z.infer<typeof GetLocalMessagesSchema>;
+export type GetUIMessagesInput = z.infer<typeof GetUIMessagesSchema>;
+export type DeleteLocalMessagesInput = z.infer<
+  typeof DeleteLocalMessagesSchema
+>;
+export type DeleteLocalMessageInput = z.infer<typeof DeleteLocalMessageSchema>;
+export type GetLocalMessageCountInput = z.infer<
+  typeof GetLocalMessageCountSchema
+>;
+export type DeleteAllLocalMessagesInput = z.infer<
+  typeof DeleteAllLocalMessagesSchema
+>;
+
+// ==================== Actions ====================
+
 /**
  * Save messages to local database
  *
  * This converts AI SDK UIMessage format to our database structure.
  * Each message can have multiple parts (text, tool-call, tool-result).
  *
- * @param chatId - Chat ID to save messages to
- * @param userId - User ID (for security check)
- * @param messages - Array of AI SDK messages
+ * @param input - Contains chatId, userId, and messages array
  */
 export async function saveLocalMessages(
-	chatId: string,
-	userId: string,
-	messages: CustomUIMessage[],
+  input: SaveLocalMessagesInput
 ): Promise<void> {
-	const db = await getClientDb();
+  const {
+    chatId,
+    userId,
+    messages: msgs,
+  } = SaveLocalMessagesSchema.parse(input);
+  const db = await getClientDb();
 
-	// Start from existing message count to maintain order
-	// const existingMessages = await getLocalMessages(chatId, userId);
-	// let orderCounter = existingMessages.length;
+  // Process each message
+  for (const msg of msgs) {
+    const messageId = nanoid();
+    // Insert message record
+    await db.insert(message).values({
+      id: messageId,
+      chatId,
+      role: msg.role,
+      order: 0,
+      parts: msg.parts,
+      metadata: msg.metadata,
+    });
+  }
 
-	// Process each message
-	for (const msg of messages) {
-		const messageId = nanoid();
-		// Insert message record
-		await db.insert(message).values({
-			id: messageId,
-			chatId,
-			role: msg.role,
-			//order: orderCounter++
-			// ,
-			order: 0,
-			parts: msg.parts,
-			metadata: msg.metadata,
-		});
-
-		// Process message parts
-		// const parts: Array<typeof messagePart.$inferInsert> = [];
-
-		/*     // Handle parts array (AI SDK format)
-    if (Array.isArray(msg.parts)) {
-      for (const part of msg.parts) {
-        const partId = nanoid();
-
-        if (part.type === "text" && "text" in part) {
-          parts.push({
-            id: partId,
-            messageId,
-            type: "text",
-            textContent: part.text as string,
-          });
-        } else if (part.type.startsWith("tool-") && "toolCallId" in part) {
-          // Tool-call part
-          if ("input" in part || "output" in part || "state" in part) {
-            parts.push({
-              id: partId,
-              messageId,
-              type: "tool-call",
-              toolCallId: part.toolCallId,
-              toolCallName: part.type.replace("tool-", ""),
-              toolCallArgs:
-                "input" in part ? (part.input as Record<string, unknown>) : {},
-            });
-
-            // If there's an output, also save it as a tool result
-            if ("output" in part && part.output !== undefined) {
-              parts.push({
-                id: nanoid(),
-                messageId,
-                type: "tool-result",
-                toolCallId: part.toolCallId,
-                toolResultContent: part.output,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Insert all parts
-    if (parts.length > 0) {
-      await db.insert(messagePart).values(parts);
-    } */
-	}
-
-	// Update chat timestamp
-	const { touchLocalChat } = await import("./chat-actions");
-	await touchLocalChat(chatId, userId);
+  // Update chat timestamp
+  const { touchLocalChat } = await import("./chat-actions");
+  await touchLocalChat(chatId, userId);
 }
 
 /**
@@ -118,92 +117,42 @@ export async function saveLocalMessages(
  *
  * Returns messages in order with their parts joined.
  *
- * @param chatId - Chat ID
- * @param userId - User ID (for security check)
+ * @param input - Contains chatId and userId
  * @returns Array of messages with parts
  */
 export async function getLocalMessages(
-	chatId: string,
-	userId: string,
+  input: GetLocalMessagesInput
 ): Promise<DB_Message[]> {
-	const db = await getClientDb();
+  const { chatId, userId } = GetLocalMessagesSchema.parse(input);
+  const db = await getClientDb();
 
-	// First verify the chat belongs to the user
-	const { getLocalChatById } = await import("./chat-actions");
-	const chat = await getLocalChatById(chatId, userId);
-	if (!chat) {
-		throw new Error("Chat not found or access denied");
-	}
+  // First verify the chat belongs to the user
+  const { getLocalChatById } = await import("./chat-actions");
+  const chat = await getLocalChatById(chatId, userId);
+  if (!chat) {
+    throw new Error("Chat not found or access denied");
+  }
 
-	// Get all messages for this chat
-	const messages = await db.query.message.findMany({
-		where: eq(message.chatId, chatId),
-		orderBy: asc(message.order),
-	});
-
-	return messages;
-}
-
-/**
- * Convert database message to AI SDK UIMessage format
- *
- * This is useful for feeding messages back into AI SDK chat functions.
- *
- * @param dbMessage - Message from database with parts
- * @returns AI SDK formatted message
- */
-/* export function toUIMessage(
-  dbMessage: LocalMessage
-): UIMessage & { modelName?: string } {
-  const parts = dbMessage.parts.map((part) => {
-    if (part.type === "text") {
-      return {
-        type: "text" as const,
-        text: part.textContent || "",
-      };
-    }
-    if (part.type === "tool-call") {
-      return {
-        type: "tool-call" as const,
-        toolCallId: part.toolCallId || "",
-        toolName: part.toolCallName || "",
-        args: part.toolCallArgs || {},
-      };
-    }
-    if (part.type === "tool-result") {
-      return {
-        type: "tool-result" as const,
-        toolCallId: part.toolCallId || "",
-        result: part.toolResultContent,
-      };
-    }
-
-    // Fallback for unknown types
-    return {
-      type: "text" as const,
-      text: "",
-    };
+  // Get all messages for this chat
+  const messages = await db.query.message.findMany({
+    where: eq(message.chatId, chatId),
+    orderBy: asc(message.order),
   });
 
-  return {
-    id: dbMessage.id,
-    role: dbMessage.role as "user" | "assistant" | "system",
-    parts: parts as UIMessage["parts"],
-    modelName: dbMessage.modelName || undefined,
-  };
-} */
+  return messages;
+}
 
 /**
  * Get messages in AI SDK format
  *
  * Convenience function that combines getLocalMessages + toUIMessage.
  *
- * @param chatId - Chat ID
- * @param userId - User ID
+ * @param input - Contains chatId and userId
  * @returns Array of AI SDK formatted messages
  */
-export async function getUIMessages(chatId: string, userId: string) {
-	return await getLocalMessages(chatId, userId);
+export async function getUIMessages(input: GetUIMessagesInput) {
+  const data = GetUIMessagesSchema.parse(input);
+  return await getLocalMessages(data);
 }
 
 /**
@@ -212,52 +161,50 @@ export async function getUIMessages(chatId: string, userId: string) {
  * Used when clearing chat history.
  * Message parts are automatically deleted via CASCADE.
  *
- * @param chatId - Chat ID
- * @param userId - User ID (for security check)
+ * @param input - Contains chatId and userId
  */
 export async function deleteLocalMessages(
-	chatId: string,
-	userId: string,
+  input: DeleteLocalMessagesInput
 ): Promise<void> {
-	const db = await getClientDb();
+  const { chatId, userId } = DeleteLocalMessagesSchema.parse(input);
+  const db = await getClientDb();
 
-	// Verify chat ownership
-	const { getLocalChatById } = await import("./chat-actions");
-	const chat = await getLocalChatById(chatId, userId);
-	if (!chat) {
-		throw new Error("Chat not found or access denied");
-	}
+  // Verify chat ownership
+  const { getLocalChatById } = await import("./chat-actions");
+  const chat = await getLocalChatById(chatId, userId);
+  if (!chat) {
+    throw new Error("Chat not found or access denied");
+  }
 
-	// Delete all messages (parts cascade automatically)
-	await db.delete(message).where(eq(message.chatId, chatId));
+  // Delete all messages (parts cascade automatically)
+  await db.delete(message).where(eq(message.chatId, chatId));
 }
 
 /**
  * Delete a single message
  *
- * @param messageId - Message ID
- * @param userId - User ID (for security check)
+ * @param input - Contains messageId and userId
  */
 export async function deleteLocalMessage(
-	messageId: string,
-	userId: string,
+  input: DeleteLocalMessageInput
 ): Promise<void> {
-	const db = await getClientDb();
+  const { messageId, userId } = DeleteLocalMessageSchema.parse(input);
+  const db = await getClientDb();
 
-	// Get message to verify ownership through chat
-	const msg = await db.query.message.findFirst({
-		where: eq(message.id, messageId),
-		with: {
-			chat: true,
-		},
-	});
+  // Get message to verify ownership through chat
+  const msg = await db.query.message.findFirst({
+    where: eq(message.id, messageId),
+    with: {
+      chat: true,
+    },
+  });
 
-	if (!msg || msg.chat.userId !== userId) {
-		throw new Error("Message not found or access denied");
-	}
+  if (!msg || msg.chat.userId !== userId) {
+    throw new Error("Message not found or access denied");
+  }
 
-	// Delete message (parts cascade automatically)
-	await db.delete(message).where(eq(message.id, messageId));
+  // Delete message (parts cascade automatically)
+  await db.delete(message).where(eq(message.id, messageId));
 }
 
 /**
@@ -265,33 +212,35 @@ export async function deleteLocalMessage(
  *
  * Useful for showing message statistics.
  *
- * @param chatId - Chat ID
- * @param userId - User ID
+ * @param input - Contains chatId and userId
  * @returns Number of messages in chat
  */
 export async function getLocalMessageCount(
-	chatId: string,
-	userId: string,
+  input: GetLocalMessageCountInput
 ): Promise<number> {
-	const messages = await getLocalMessages(chatId, userId);
-	return messages.length;
+  const data = GetLocalMessageCountSchema.parse(input);
+  const messages = await getLocalMessages(data);
+  return messages.length;
 }
 
 /**
  * Clear all messages for a user
  * WARNING: This deletes ALL messages across ALL chats!
  *
- * @param userId - User ID
+ * @param input - Contains userId
  */
-export async function deleteAllLocalMessages(userId: string): Promise<void> {
-	const db = await getClientDb();
+export async function deleteAllLocalMessages(
+  input: DeleteAllLocalMessagesInput
+): Promise<void> {
+  const { userId } = DeleteAllLocalMessagesSchema.parse(input);
+  const db = await getClientDb();
 
-	// Get all chats for user
-	const { getLocalChats } = await import("./chat-actions");
-	const chats = await getLocalChats(userId);
+  // Get all chats for user
+  const { getLocalChats } = await import("./chat-actions");
+  const chats = await getLocalChats(userId);
 
-	// Delete messages for each chat
-	for (const chat of chats) {
-		await db.delete(message).where(eq(message.chatId, chat.id));
-	}
+  // Delete messages for each chat
+  for (const chat of chats) {
+    await db.delete(message).where(eq(message.chatId, chat.id));
+  }
 }

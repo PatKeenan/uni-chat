@@ -1,0 +1,1 @@
+ALTER TABLE "starred_model" ADD COLUMN "supports_tool_calls" boolean DEFAULT false NOT NULL;

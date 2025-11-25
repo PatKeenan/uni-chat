@@ -1,0 +1,1 @@
+ALTER TABLE "starred_model" ADD COLUMN "metadata" jsonb DEFAULT 'null'::jsonb;

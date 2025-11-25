@@ -4,16 +4,19 @@ import { useChatStore } from "@/chat-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CustomUIMessage } from "@/lib/client/types";
+import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessage } from "./chat-message";
 
 interface ChatMessageListProps {
 	messages: CustomUIMessage[];
 	isLoading?: boolean;
+	onSuggestionClick?: (text: string) => void;
 }
 
 function ChatMessageListComponent({
 	messages,
 	isLoading,
+	onSuggestionClick,
 }: ChatMessageListProps) {
 	const isLoadingInitialMessages = useChatStore(
 		(state) => state.isLoadingInitialMessages,
@@ -107,12 +110,13 @@ function ChatMessageListComponent({
 	if (messages.length === 0 && !isLoadingInitialMessages) {
 		return (
 			<div className="flex h-full items-center justify-center">
-				<div className="text-center">
-					<h2 className="text-xl font-semibold">Start a conversation</h2>
-					<p className="text-sm text-muted-foreground">
-						Send a message to get started
-					</p>
-				</div>
+				<ChatEmptyState
+					onSuggestionClick={(text) => {
+						if (onSuggestionClick) {
+							onSuggestionClick(text);
+						}
+					}}
+				/>
 			</div>
 		);
 	}

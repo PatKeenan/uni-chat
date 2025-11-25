@@ -33,7 +33,8 @@ export const Route = createFileRoute("/dashboard/new")({
 
 function NewChatView() {
   const navigate = useNavigate();
-  const { data: starredModels } = useStarredModels();
+  const [userId, setUserId] = useState<string | null>(null);
+  const { data: starredModels } = useStarredModels(userId ?? "");
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isCheckingDefaultModel, setIsCheckingDefaultModel] = useState(true);
@@ -47,6 +48,12 @@ function NewChatView() {
 
     const autoCreateChatWithDefaultModel = async () => {
       const defaultModel = getDefaultModel();
+      const session = await getSession();
+      
+      // Set userId for starred models query
+      if (session.data?.user?.id) {
+        setUserId(session.data.user.id);
+      }
 
       // If no default model, show the model selection screen
       if (!defaultModel) {
@@ -54,7 +61,6 @@ function NewChatView() {
         return;
       }
 
-      const session = await getSession();
       if (!session.data?.user?.id) {
         setIsCheckingDefaultModel(false);
         return;

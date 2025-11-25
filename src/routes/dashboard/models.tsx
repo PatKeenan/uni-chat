@@ -23,8 +23,13 @@ import { getOpenRouterModels } from "@/lib/server/actions/model-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/models")({
-  loader: async () => {
+  loader: async ({ context }) => {
     // Check if user has API key
+    const userId = context.user?.id;
+
+    if (!userId) {
+      throw redirect({ to: "/login" });
+    }
 
     const hasKey = await hasApiKey();
     const localKey = getApiKey();
@@ -35,16 +40,16 @@ export const Route = createFileRoute("/dashboard/models")({
     const models = await getOpenRouterModels({
       data: { localApiKey: localKey || "" },
     });
-    return { models };
+    return { models, userId };
   },
   component: ModelsView,
 });
 
 function ModelsView() {
-  const { models: allModels } = Route.useLoaderData();
+  const { models: allModels, userId } = Route.useLoaderData();
 
-  const { data: starredModels } = useStarredModels();
-  const { star, unstar } = useToggleModelStar();
+  const { data: starredModels } = useStarredModels(userId);
+  const { star, unstar } = useToggleModelStar(userId);
   const [searchQuery, setSearchQuery] = useState("");
 
   const starredModelIds = new Set(starredModels?.map((m) => m.modelId) || []);
@@ -76,6 +81,12 @@ function ModelsView() {
         pricingCompletion: model.pricing?.completion
           ? parseFloat(model.pricing.completion)
           : undefined,
+        supportsToolCalls:
+          model.supportedParameters?.includes("tool_choice") ||
+          model.supportedParameters?.includes("tools") ||
+          false,
+        // Store full model metadata for capability detection (image gen, tools, etc.)
+        metadata: model,
       });
     }
   };

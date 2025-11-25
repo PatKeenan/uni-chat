@@ -13,7 +13,7 @@ import { decryptApiKey } from "../utils/encryption";
 export const getOpenRouterModels = createServerFn()
   .middleware([protectedMiddleware])
   .inputValidator(z.object({ localApiKey: z.string() }))
-  .handler(async ({ context, data }) => {
+  .handler(async ({ data }) => {
     /* const apiKey = data.localApiKey || (await getApiKey(context)); */
 
     // Fetch models from OpenRouter
