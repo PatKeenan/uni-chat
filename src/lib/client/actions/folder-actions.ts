@@ -5,7 +5,7 @@
  * Folders organize chats into categories - all operations are client-side only.
  */
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getClientDb } from "@/lib/client/db";
 import { folder } from "@/lib/client/db/schema";

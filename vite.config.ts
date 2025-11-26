@@ -6,26 +6,27 @@ import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
-	plugins: [
-		cloudflare({ viteEnvironment: { name: "ssr" } }),
-		// this is the plugin that enables path aliases
-		viteTsConfigPaths({
-			projects: ["./tsconfig.json"],
-		}),
-		tailwindcss(),
-		tanstackStart({
-			spa: {
-				enabled: true,
-			},
-		}),
-		viteReact(),
-	],
-	optimizeDeps: {
-		exclude: ["@electric-sql/pglite"],
-	},
-	worker: {
-		format: "es",
-	},
+  plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    // this is the plugin that enables path aliases
+    viteTsConfigPaths({
+      projects: ["./tsconfig.json"],
+    }),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ],
+  optimizeDeps: {
+    exclude: ["@electric-sql/pglite"],
+  },
+  build: {
+    rollupOptions: {
+      external: ["cloudflare:workers"],
+    },
+  },
+  worker: {
+    format: "es",
+  },
 });
 
 export default config;

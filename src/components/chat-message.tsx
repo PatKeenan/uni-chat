@@ -371,8 +371,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
 
-  console.log({ message });
-
   // Separate reasoning, text, file, and tool parts
   const reasoningParts = message.parts?.filter(
     (part) => part.type === "reasoning"

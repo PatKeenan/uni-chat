@@ -42,7 +42,6 @@ export const Route = createFileRoute("/api/chat")({
             apiKey,
             tavilyApiKey,
             capabilities,
-            modelMetadata,
           } = body as {
             chatId: string;
             messages: DB_Message[];

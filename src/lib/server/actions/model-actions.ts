@@ -3,9 +3,8 @@ import { and, asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { fetchOpenRouterModels } from "@/lib/openrouter/client";
-import { apiKey as apiKeyTable, starredModel } from "../db/schema";
+import { starredModel } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
-import { decryptApiKey } from "../utils/encryption";
 /**
  * Fetches all available models from OpenRouter
  * Requires user to have an API key stored

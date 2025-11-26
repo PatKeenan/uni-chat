@@ -178,7 +178,7 @@ export const chatRelations = relations(chat, ({ one, many }) => ({
   messages: many(message),
 }));
 
-export const messageRelations = relations(message, ({ one, many }) => ({
+export const messageRelations = relations(message, ({ one }) => ({
   chat: one(chat, {
     fields: [message.chatId],
     references: [chat.id],

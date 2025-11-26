@@ -17,7 +17,9 @@ export interface ModelCapabilities {
 /**
  * Extract capabilities from OpenRouter model metadata
  */
-export function extractModelCapabilities(model: Model | null): ModelCapabilities {
+export function extractModelCapabilities(
+  model: Model | null
+): ModelCapabilities {
   if (!model) {
     return {
       supportsToolCalls: false,
@@ -35,9 +37,10 @@ export function extractModelCapabilities(model: Model | null): ModelCapabilities
   // Check if model supports tool calls via supportedParameters
   // Common parameter names for tool support: "tools", "tool_choice", "functions"
   const toolParams = ["tools", "tool_choice", "functions"];
-  const supportsToolCalls = model.supportedParameters?.some(
-    (param) => toolParams.includes(param.name?.toLowerCase() || "")
-  ) ?? false;
+  const supportsToolCalls =
+    model.supportedParameters?.some((param) =>
+      toolParams.includes(param?.toLowerCase() || "")
+    ) ?? false;
 
   return {
     supportsToolCalls,

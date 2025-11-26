@@ -1,11 +1,9 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 //import appCss from "../styles.css?url";
 import newCss from "../new-css.css?url";
@@ -23,7 +21,7 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "Muse | Chat with AI",
       },
     ],
     links: [

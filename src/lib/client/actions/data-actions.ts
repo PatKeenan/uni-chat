@@ -9,10 +9,15 @@
  * - Complete data wipe
  */
 
-import { count, eq, sql } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { getClientDb, resetClientDb, formatBytes, getStorageUsage } from "@/lib/client/db";
-import { chat, message, folder, starredModel } from "@/lib/client/db/schema";
+import {
+  formatBytes,
+  getClientDb,
+  getStorageUsage,
+  resetClientDb,
+} from "@/lib/client/db";
+import { chat, folder, message, starredModel } from "@/lib/client/db/schema";
 
 // ==================== Types ====================
 
@@ -96,56 +101,52 @@ export const ClearAllDataSchema = z.object({
  */
 export async function getDataStats(userId: string): Promise<DataStats> {
   GetDataStatsSchema.parse({ userId });
-  
+
   const db = await getClientDb();
-  
+
   // Get overall storage usage from browser API
   const storageUsage = await getStorageUsage();
-  
+
   // Get counts and estimate sizes
   // Note: Exact byte sizes are hard to determine in IndexedDB,
   // so we estimate based on record counts and typical record sizes
-  
+
   // Chat count
   const [chatResult] = await db
     .select({ count: count() })
     .from(chat)
     .where(eq(chat.userId, userId));
   const chatCount = chatResult?.count ?? 0;
-  
-  // Message count and check for attachments
-  const [messageResult] = await db
-    .select({ count: count() })
-    .from(message);
-  const messageCount = messageResult?.count ?? 0;
-  
+
   // Get messages with their parts to analyze attachments
   const messagesWithParts = await db
     .select({ parts: message.parts })
     .from(message)
     .innerJoin(chat, eq(message.chatId, chat.id))
     .where(eq(chat.userId, userId));
-  
+
   let attachmentCount = 0;
   let attachmentTotalSize = 0;
-  
+
   for (const msg of messagesWithParts) {
     if (msg.parts && Array.isArray(msg.parts)) {
       for (const part of msg.parts) {
         // Check for file/image attachments
-        if (part && typeof part === 'object') {
+        if (part && typeof part === "object") {
           const partObj = part as Record<string, unknown>;
-          if (partObj.type === 'file' || partObj.type === 'image') {
+          if (partObj.type === "file" || partObj.type === "image") {
             attachmentCount++;
             // Estimate attachment size from data URL or blob
-            if (partObj.data && typeof partObj.data === 'string') {
+            if (partObj.data && typeof partObj.data === "string") {
               // Base64 data URLs are ~33% larger than binary
-              attachmentTotalSize += Math.ceil((partObj.data as string).length * 0.75);
-            } else if (partObj.url && typeof partObj.url === 'string') {
+              attachmentTotalSize += Math.ceil(
+                (partObj.data as string).length * 0.75
+              );
+            } else if (partObj.url && typeof partObj.url === "string") {
               // If it's a data URL, calculate size
               const url = partObj.url as string;
-              if (url.startsWith('data:')) {
-                const base64Part = url.split(',')[1] || '';
+              if (url.startsWith("data:")) {
+                const base64Part = url.split(",")[1] || "";
                 attachmentTotalSize += Math.ceil(base64Part.length * 0.75);
               }
             }
@@ -154,21 +155,21 @@ export async function getDataStats(userId: string): Promise<DataStats> {
       }
     }
   }
-  
+
   // Folder count
   const [folderResult] = await db
     .select({ count: count() })
     .from(folder)
     .where(eq(folder.userId, userId));
   const folderCount = folderResult?.count ?? 0;
-  
+
   // Starred model count
   const [starredModelResult] = await db
     .select({ count: count() })
     .from(starredModel)
     .where(eq(starredModel.userId, userId));
   const starredModelCount = starredModelResult?.count ?? 0;
-  
+
   // Estimate sizes (rough estimates based on typical record sizes)
   // Chat: ~200 bytes per record (id, title, model, timestamps)
   const chatEstimatedSize = chatCount * 200;
@@ -180,7 +181,7 @@ export async function getDataStats(userId: string): Promise<DataStats> {
   const folderEstimatedSize = folderCount * 100;
   // Starred model: ~300 bytes per record (includes model metadata)
   const starredModelEstimatedSize = starredModelCount * 300;
-  
+
   return {
     totalStorageUsed: storageUsage.used,
     totalStorageUsedFormatted: formatBytes(storageUsage.used),
@@ -196,7 +197,9 @@ export async function getDataStats(userId: string): Promise<DataStats> {
       messages: {
         count: userMessageCount,
         estimatedSize: messageEstimatedSize - attachmentTotalSize,
-        estimatedSizeFormatted: formatBytes(messageEstimatedSize - attachmentTotalSize),
+        estimatedSizeFormatted: formatBytes(
+          messageEstimatedSize - attachmentTotalSize
+        ),
       },
       attachments: {
         count: attachmentCount,
@@ -226,11 +229,13 @@ export async function getDataStats(userId: string): Promise<DataStats> {
  * @param userId - User ID
  * @returns Result with success status and items deleted count
  */
-export async function clearAttachments(userId: string): Promise<ClearDataResult> {
+export async function clearAttachments(
+  userId: string
+): Promise<ClearDataResult> {
   ClearAttachmentsSchema.parse({ userId });
-  
+
   const db = await getClientDb();
-  
+
   try {
     // Get all messages for user's chats
     const messagesWithParts = await db
@@ -238,22 +243,22 @@ export async function clearAttachments(userId: string): Promise<ClearDataResult>
       .from(message)
       .innerJoin(chat, eq(message.chatId, chat.id))
       .where(eq(chat.userId, userId));
-    
+
     let attachmentsRemoved = 0;
-    
+
     for (const msg of messagesWithParts) {
       if (msg.parts && Array.isArray(msg.parts)) {
         const filteredParts = msg.parts.filter((part) => {
-          if (part && typeof part === 'object') {
+          if (part && typeof part === "object") {
             const partObj = part as Record<string, unknown>;
-            if (partObj.type === 'file' || partObj.type === 'image') {
+            if (partObj.type === "file" || partObj.type === "image") {
               attachmentsRemoved++;
               return false;
             }
           }
           return true;
         });
-        
+
         // Update message if parts were modified
         if (filteredParts.length !== msg.parts.length) {
           await db
@@ -263,7 +268,7 @@ export async function clearAttachments(userId: string): Promise<ClearDataResult>
         }
       }
     }
-    
+
     return {
       success: true,
       message: `Successfully removed ${attachmentsRemoved} attachment(s)`,
@@ -286,20 +291,22 @@ export async function clearAttachments(userId: string): Promise<ClearDataResult>
  * @param userId - User ID
  * @returns Result with success status
  */
-export async function clearAllMessages(userId: string): Promise<ClearDataResult> {
+export async function clearAllMessages(
+  userId: string
+): Promise<ClearDataResult> {
   ClearAllMessagesSchema.parse({ userId });
-  
+
   const db = await getClientDb();
-  
+
   try {
     // Get user's chat IDs
     const userChats = await db
       .select({ id: chat.id })
       .from(chat)
       .where(eq(chat.userId, userId));
-    
+
     let messagesDeleted = 0;
-    
+
     for (const c of userChats) {
       const result = await db
         .delete(message)
@@ -307,7 +314,7 @@ export async function clearAllMessages(userId: string): Promise<ClearDataResult>
         .returning({ id: message.id });
       messagesDeleted += result.length;
     }
-    
+
     return {
       success: true,
       message: `Successfully deleted ${messagesDeleted} message(s)`,
@@ -333,15 +340,15 @@ export async function clearAllMessages(userId: string): Promise<ClearDataResult>
  */
 export async function clearAllChats(userId: string): Promise<ClearDataResult> {
   ClearAllChatsSchema.parse({ userId });
-  
+
   const db = await getClientDb();
-  
+
   try {
     const result = await db
       .delete(chat)
       .where(eq(chat.userId, userId))
       .returning({ id: chat.id });
-    
+
     return {
       success: true,
       message: `Successfully deleted ${result.length} chat(s) and all their messages`,
@@ -365,22 +372,24 @@ export async function clearAllChats(userId: string): Promise<ClearDataResult> {
  * @param userId - User ID
  * @returns Result with success status
  */
-export async function clearAllUserData(userId: string): Promise<ClearDataResult> {
+export async function clearAllUserData(
+  userId: string
+): Promise<ClearDataResult> {
   ClearAllDataSchema.parse({ userId });
-  
+
   const db = await getClientDb();
-  
+
   try {
     // Delete in order to respect foreign key constraints
     // 1. Delete all chats (messages cascade automatically)
     await db.delete(chat).where(eq(chat.userId, userId));
-    
+
     // 2. Delete all folders
     await db.delete(folder).where(eq(folder.userId, userId));
-    
+
     // 3. Delete all starred models
     await db.delete(starredModel).where(eq(starredModel.userId, userId));
-    
+
     return {
       success: true,
       message: "Successfully cleared all your local data",
@@ -405,7 +414,7 @@ export async function clearAllUserData(userId: string): Promise<ClearDataResult>
 export async function completeDataReset(): Promise<ClearDataResult> {
   try {
     await resetClientDb();
-    
+
     return {
       success: true,
       message: "Database completely reset. Please refresh the page.",
@@ -418,4 +427,3 @@ export async function completeDataReset(): Promise<ClearDataResult> {
     };
   }
 }
-

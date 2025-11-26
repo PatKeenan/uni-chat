@@ -164,8 +164,6 @@ export async function getStarredModels(input: GetStarredModelsInput) {
     .where(eq(starredModel.userId, userId))
     .orderBy(asc(starredModel.order));
 
-  console.log({ db_models: models });
-
   return models;
 }
 

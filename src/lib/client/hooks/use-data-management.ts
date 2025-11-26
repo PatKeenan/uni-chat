@@ -7,21 +7,22 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getDataStats,
-  clearAttachments,
-  clearAllMessages,
+  type ClearDataResult,
   clearAllChats,
+  clearAllMessages,
   clearAllUserData,
+  clearAttachments,
   completeDataReset,
   type DataStats,
-  type ClearDataResult,
+  getDataStats,
 } from "@/lib/client/actions/data-actions";
 
 // ==================== Query Keys ====================
 
 export const dataManagementKeys = {
   all: ["data-management"] as const,
-  stats: (userId: string) => [...dataManagementKeys.all, "stats", userId] as const,
+  stats: (userId: string) =>
+    [...dataManagementKeys.all, "stats", userId] as const,
 };
 
 // ==================== Hooks ====================
@@ -136,7 +137,7 @@ export function useClearAllUserData() {
 
   return useMutation<ClearDataResult, Error, string>({
     mutationFn: (userId: string) => clearAllUserData(userId),
-    onSuccess: (result, userId) => {
+    onSuccess: (result) => {
       if (result.success) {
         // Invalidate everything
         queryClient.invalidateQueries({
@@ -177,4 +178,3 @@ export function useCompleteDataReset() {
     },
   });
 }
-
