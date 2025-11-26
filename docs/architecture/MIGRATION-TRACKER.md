@@ -1,0 +1,298 @@
+# Domain Migration Tracker
+
+This document tracks progress on reorganizing the codebase into the domain structure defined in `DOMAIN-ARCHITECTURE.md`.
+
+**Important:** This is a living document. Update it as work progresses so any agent can pick up where work stopped.
+
+---
+
+## Current Status
+
+| Domain | Status | Progress |
+|--------|--------|----------|
+| Routing | No changes needed | N/A |
+| Server | NOT STARTED | 0% |
+| Client | NOT STARTED | 0% |
+| Components | NOT STARTED | 0% |
+| Integrations | NOT STARTED | 0% |
+| Types | NOT STARTED | 0% |
+| Testing | No changes needed | N/A |
+
+**Last Updated:** Not yet started
+
+---
+
+## Migration Order
+
+Work through domains in this order:
+
+1. [Server](#phase-1-server-domain)
+2. [Client](#phase-2-client-domain)
+3. [Components](#phase-3-components-domain)
+4. [Integrations](#phase-4-integrations-domain)
+5. [Types](#phase-5-types-domain)
+
+---
+
+## Phase 1: Server Domain
+
+**Goal:** Move `src/lib/server/` → `src/server/`
+
+### Tasks
+
+- [ ] Create `src/server/` directory
+- [ ] Move `src/lib/server/actions/` → `src/server/actions/`
+- [ ] Move `src/lib/server/middleware/` → `src/server/middleware/`
+- [ ] Move `src/lib/server/db/` → `src/server/db/`
+- [ ] Move `src/lib/server/auth/` → `src/server/auth/`
+- [ ] Move `src/lib/server/utils/` → `src/server/utils/`
+- [ ] Move `src/lib/server/loadConfig.ts` → `src/server/config.ts`
+- [ ] Move AI tools: `src/lib/server/ai-tools/` → `src/integrations/tavily/` (or keep in server?)
+- [ ] Update all imports across codebase
+- [ ] Verify build passes
+- [ ] Verify tests pass
+- [ ] Delete empty `src/lib/server/` directory
+
+### Files to Move
+
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `src/lib/server/actions/auth-actions.ts` | `src/server/actions/auth-actions.ts` | [ ] |
+| `src/lib/server/actions/chat-actions.ts` | `src/server/actions/chat-actions.ts` | [ ] |
+| `src/lib/server/actions/message-actions.ts` | `src/server/actions/message-actions.ts` | [ ] |
+| `src/lib/server/actions/folder-actions.ts` | `src/server/actions/folder-actions.ts` | [ ] |
+| `src/lib/server/actions/model-actions.ts` | `src/server/actions/model-actions.ts` | [ ] |
+| `src/lib/server/actions/api-key-actions.ts` | `src/server/actions/api-key-actions.ts` | [ ] |
+| `src/lib/server/middleware/global-middleware.ts` | `src/server/middleware/global-middleware.ts` | [ ] |
+| `src/lib/server/middleware/auth-middleware.ts` | `src/server/middleware/auth-middleware.ts` | [ ] |
+| `src/lib/server/middleware/protected-middleware.ts` | `src/server/middleware/protected-middleware.ts` | [ ] |
+| `src/lib/server/db/index.ts` | `src/server/db/index.ts` | [ ] |
+| `src/lib/server/db/schema.ts` | `src/server/db/schema.ts` | [ ] |
+| `src/lib/server/db/schema/index.ts` | `src/server/db/schema/index.ts` | [ ] |
+| `src/lib/server/db/schema/server-only.ts` | `src/server/db/schema/server-only.ts` | [ ] |
+| `src/lib/server/auth/index.ts` | `src/server/auth/index.ts` | [ ] |
+| `src/lib/server/utils/encryption.ts` | `src/server/utils/encryption.ts` | [ ] |
+| `src/lib/server/utils/encryption.test.ts` | `src/server/utils/encryption.test.ts` | [ ] |
+| `src/lib/server/loadConfig.ts` | `src/server/config.ts` | [ ] |
+| `src/lib/server/ai-tools/web-search.ts` | `src/integrations/tavily/web-search.ts` | [ ] |
+
+### Import Updates Required
+
+After moving files, update imports in these locations:
+
+- [ ] `src/routes/api/auth/$.ts` - middleware imports
+- [ ] `src/routes/api/chat.ts` - middleware, actions imports
+- [ ] `src/routes/dashboard.tsx` - auth actions
+- [ ] `src/routes/dashboard/new.tsx` - server actions
+- [ ] `src/routes/dashboard/settings.tsx` - server actions
+- [ ] `src/routes/dashboard/c.$chatId.tsx` - server actions
+- [ ] `src/routes/dashboard/models.tsx` - server actions
+- [ ] `src/routes/login.tsx` - if any server imports
+- [ ] `src/routes/signup.tsx` - if any server imports
+- [ ] Internal server file imports (middleware chain, etc.)
+
+### Verification
+
+- [ ] `bun run build` succeeds
+- [ ] `bun test` passes
+- [ ] App runs locally without errors
+- [ ] Auth flow works (login, logout)
+- [ ] Chat creation works
+- [ ] Chat streaming works
+
+---
+
+## Phase 2: Client Domain
+
+**Goal:** Move `src/lib/client/` → `src/client/` and consolidate scattered client files
+
+### Tasks
+
+- [ ] Create `src/client/` directory structure
+- [ ] Move `src/lib/client/hooks/` → `src/client/hooks/`
+- [ ] Move `src/lib/client/actions/` → `src/client/actions/`
+- [ ] Move `src/lib/client/queries/` → `src/client/queries/`
+- [ ] Move `src/lib/client/db/` → `src/client/db/`
+- [ ] Move `src/lib/client/storage/` → `src/client/storage/`
+- [ ] Move `src/lib/client/utils/` → `src/client/utils/`
+- [ ] Move `src/lib/client/auth-client.ts` → `src/client/auth.ts`
+- [ ] Move `src/lib/client/types.ts` → `src/types/models.ts` (consolidate)
+- [ ] Create `src/client/stores/` directory
+- [ ] Move `src/chat-store.ts` → `src/client/stores/chat-store.ts`
+- [ ] Consolidate hooks: Delete duplicate `src/hooks/use-mobile.ts` or `src/components/hooks/use-mobile.ts`
+- [ ] Update all imports across codebase
+- [ ] Delete empty directories
+- [ ] Verify build and tests
+
+### Files to Move
+
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `src/lib/client/hooks/use-chat-stream.ts` | `src/client/hooks/use-chat-stream.ts` | [ ] |
+| `src/lib/client/hooks/use-local-chats.ts` | `src/client/hooks/use-local-chats.ts` | [ ] |
+| `src/lib/client/hooks/use-local-folders.ts` | `src/client/hooks/use-local-folders.ts` | [ ] |
+| `src/lib/client/hooks/use-local-messages.ts` | `src/client/hooks/use-local-messages.ts` | [ ] |
+| `src/lib/client/hooks/use-models.ts` | `src/client/hooks/use-models.ts` | [ ] |
+| `src/lib/client/hooks/use-data-management.ts` | `src/client/hooks/use-data-management.ts` | [ ] |
+| `src/lib/client/actions/chat-actions.ts` | `src/client/actions/chat-actions.ts` | [ ] |
+| `src/lib/client/actions/message-actions.ts` | `src/client/actions/message-actions.ts` | [ ] |
+| `src/lib/client/actions/folder-actions.ts` | `src/client/actions/folder-actions.ts` | [ ] |
+| `src/lib/client/actions/model-actions.ts` | `src/client/actions/model-actions.ts` | [ ] |
+| `src/lib/client/actions/data-actions.ts` | `src/client/actions/data-actions.ts` | [ ] |
+| `src/lib/client/queries/auth-queries.ts` | `src/client/queries/auth-queries.ts` | [ ] |
+| `src/lib/client/queries/data-queries.ts` | `src/client/queries/data-queries.ts` | [ ] |
+| `src/lib/client/db/index.ts` | `src/client/db/index.ts` | [ ] |
+| `src/lib/client/db/migrations.ts` | `src/client/db/migrations.ts` | [ ] |
+| `src/lib/client/db/schema/index.ts` | `src/client/db/schema/index.ts` | [ ] |
+| `src/lib/client/db/schema/client-only.ts` | `src/client/db/schema/client-only.ts` | [ ] |
+| `src/lib/client/storage/api-key.ts` | `src/client/storage/api-key.ts` | [ ] |
+| `src/lib/client/storage/default-model.ts` | `src/client/storage/default-model.ts` | [ ] |
+| `src/lib/client/utils/generate-chat-title.ts` | `src/client/utils/generate-chat-title.ts` | [ ] |
+| `src/lib/client/utils/to-ui-message.ts` | `src/client/utils/to-ui-message.ts` | [ ] |
+| `src/lib/client/auth-client.ts` | `src/client/auth.ts` | [ ] |
+| `src/lib/client/types.ts` | `src/types/models.ts` | [ ] |
+| `src/chat-store.ts` | `src/client/stores/chat-store.ts` | [ ] |
+| `src/hooks/use-mobile.ts` | DELETE (duplicate) | [ ] |
+| `src/components/hooks/use-mobile.ts` | `src/client/hooks/use-mobile.ts` | [ ] |
+
+### Verification
+
+- [ ] `bun run build` succeeds
+- [ ] `bun test` passes
+- [ ] Chat input works
+- [ ] Model selection works
+- [ ] Local storage persists
+- [ ] Mobile responsive works
+
+---
+
+## Phase 3: Components Domain
+
+**Goal:** Organize components into feature subdirectories
+
+### Tasks
+
+- [ ] Create `src/components/chat/` directory
+- [ ] Create `src/components/nav/` directory
+- [ ] Create `src/components/shared/` directory
+- [ ] Move chat components to `chat/`
+- [ ] Move nav components to `nav/`
+- [ ] Move utility components to `shared/`
+- [ ] Delete empty `src/components/hooks/` (hooks moved to client)
+- [ ] Update all imports
+- [ ] Verify build and tests
+
+### Files to Move
+
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `src/components/chat-view-content.tsx` | `src/components/chat/chat-view-content.tsx` | [ ] |
+| `src/components/chat-header.tsx` | `src/components/chat/chat-header.tsx` | [ ] |
+| `src/components/chat-message.tsx` | `src/components/chat/chat-message.tsx` | [ ] |
+| `src/components/chat-message-list.tsx` | `src/components/chat/chat-message-list.tsx` | [ ] |
+| `src/components/chat-input.tsx` | `src/components/chat/chat-input.tsx` | [ ] |
+| `src/components/chat-empty-state.tsx` | `src/components/chat/chat-empty-state.tsx` | [ ] |
+| `src/components/code-block.tsx` | `src/components/chat/code-block.tsx` | [ ] |
+| `src/components/app-sidebar.tsx` | `src/components/nav/app-sidebar.tsx` | [ ] |
+| `src/components/nav-folders.tsx` | `src/components/nav/nav-folders.tsx` | [ ] |
+| `src/components/nav-user.tsx` | `src/components/nav/nav-user.tsx` | [ ] |
+| `src/components/nav-main.tsx` | `src/components/nav/nav-main.tsx` | [ ] |
+| `src/components/nav-projects.tsx` | `src/components/nav/nav-projects.tsx` | [ ] |
+| `src/components/nav-starred-models.tsx` | `src/components/nav/nav-starred-models.tsx` | [ ] |
+| `src/components/default-catch-boundary.tsx` | `src/components/shared/default-catch-boundary.tsx` | [ ] |
+| `src/components/not-found.tsx` | `src/components/shared/not-found.tsx` | [ ] |
+| `src/components/hooks/use-mobile.ts` | DELETE (moved to client) | [ ] |
+
+### Verification
+
+- [ ] `bun run build` succeeds
+- [ ] All pages render correctly
+- [ ] Sidebar works
+- [ ] Chat interface works
+
+---
+
+## Phase 4: Integrations Domain
+
+**Goal:** Consolidate third-party integrations into dedicated directory
+
+### Tasks
+
+- [ ] Create `src/integrations/` directory
+- [ ] Create `src/integrations/openrouter/` directory
+- [ ] Create `src/integrations/tavily/` directory
+- [ ] Move OpenRouter client
+- [ ] Move Tavily web search tool
+- [ ] Update imports
+- [ ] Verify build and tests
+
+### Files to Move
+
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `src/lib/openrouter/client.ts` | `src/integrations/openrouter/client.ts` | [ ] |
+| `src/lib/server/ai-tools/web-search.ts` | `src/integrations/tavily/web-search.ts` | [ ] |
+
+### Verification
+
+- [ ] `bun run build` succeeds
+- [ ] Model fetching works
+- [ ] Web search tool works in chat
+
+---
+
+## Phase 5: Types Domain
+
+**Goal:** Consolidate scattered type definitions
+
+### Tasks
+
+- [ ] Review `src/types/chat.ts` - keep as is
+- [ ] Move `src/lib/client/types.ts` → `src/types/models.ts`
+- [ ] Create `src/types/index.ts` for re-exports
+- [ ] Update imports
+- [ ] Verify build
+
+### Files to Move/Create
+
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `src/types/chat.ts` | Keep | [ ] |
+| `src/lib/client/types.ts` | `src/types/models.ts` | [ ] |
+| (new file) | `src/types/index.ts` | [ ] |
+
+### Verification
+
+- [ ] `bun run build` succeeds
+- [ ] Type checking passes
+
+---
+
+## Final Cleanup
+
+After all phases complete:
+
+- [ ] Delete `src/lib/` directory (should be empty)
+- [ ] Delete `src/hooks/` directory (should be empty)
+- [ ] Update `tsconfig.json` with new path aliases
+- [ ] Update any documentation referencing old paths
+- [ ] Full test suite passes
+- [ ] Manual smoke test of all features
+
+---
+
+## Notes
+
+Add notes here as work progresses:
+
+- (No notes yet)
+
+---
+
+## Completed Work Log
+
+Record completed work here with dates:
+
+| Date | Phase | Work Completed | Agent/Person |
+|------|-------|----------------|--------------|
+| | | | |
