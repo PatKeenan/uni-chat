@@ -43,7 +43,7 @@ import {
   useClearAttachments,
   useCompleteDataReset,
   useDataStats,
-} from "@/lib/client/hooks/use-data-management";
+} from "@/client/hooks/use-data-management";
 import {
   hasApiKey as hasLocalApiKey,
   hasTavilyApiKey as hasLocalTavilyApiKey,
@@ -51,12 +51,12 @@ import {
   removeTavilyApiKey,
   setApiKey as setLocalApiKey,
   setTavilyApiKey as setLocalTavilyApiKey,
-} from "@/lib/client/storage/api-key";
+} from "@/client/storage/api-key";
 import {
   getDefaultModel,
   removeDefaultModel,
   setDefaultModel,
-} from "@/lib/client/storage/default-model";
+} from "@/client/storage/default-model";
 import { getStarredModels } from "@/server/actions/model-actions";
 
 export const Route = createFileRoute("/dashboard/settings")({

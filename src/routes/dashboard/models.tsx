@@ -15,8 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useStarredModels,
   useToggleModelStar,
-} from "@/lib/client/hooks/use-models";
-import { getApiKey } from "@/lib/client/storage/api-key";
+} from "@/client/hooks/use-models";
+import { getApiKey } from "@/client/storage/api-key";
 import type { OpenRouterModel } from "@/lib/openrouter/client";
 import { hasApiKey } from "@/server/actions/api-key-actions";
 import { getOpenRouterModels } from "@/server/actions/model-actions";

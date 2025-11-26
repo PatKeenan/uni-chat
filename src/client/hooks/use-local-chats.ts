@@ -18,8 +18,8 @@ import {
 	updateLocalChat,
 	updateLocalChatModel,
 	updateLocalChatTitle,
-} from "@/lib/client/actions/chat-actions";
-import type { chat } from "@/lib/client/db/schema";
+} from "@/client/actions/chat-actions";
+import type { chat } from "@/client/db/schema";
 
 /**
  * Query keys for chat operations

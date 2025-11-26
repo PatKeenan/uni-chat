@@ -29,7 +29,7 @@ let migrations: DrizzleMigration[] = [];
 
 try {
 	const imported = await import(
-		"../../../../drizzle/migrations-client/migrations.json"
+		"../../../drizzle/migrations-client/migrations.json"
 	);
 	// Handle both default export and direct export (dynamic import returns module object)
 	const migrationData = imported.default || imported;

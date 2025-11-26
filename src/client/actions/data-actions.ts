@@ -16,8 +16,8 @@ import {
   getClientDb,
   getStorageUsage,
   resetClientDb,
-} from "@/lib/client/db";
-import { chat, folder, message, starredModel } from "@/lib/client/db/schema";
+} from "@/client/db";
+import { chat, folder, message, starredModel } from "@/client/db/schema";
 
 // ==================== Types ====================
 

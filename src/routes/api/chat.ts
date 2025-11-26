@@ -5,10 +5,10 @@ import {
   stepCountIs,
   streamText,
 } from "ai";
-import type { ModelCapabilities } from "@/chat-store";
-import type { DB_Message } from "@/lib/client/db/schema";
-import type { Model } from "@/lib/client/types";
-import { toUiMessages } from "@/lib/client/utils/to-ui-message";
+import type { ModelCapabilities } from "@/client/stores/chat-store";
+import type { DB_Message } from "@/client/db/schema";
+import type { Model } from "@/types/models";
+import { toUiMessages } from "@/client/utils/to-ui-message";
 import { createOpenRouterClient } from "@/lib/openrouter/client";
 import { initWebSearchTool } from "@/integrations/tavily/web-search";
 import { protectedMiddleware } from "@/server/middleware/protected-middleware";

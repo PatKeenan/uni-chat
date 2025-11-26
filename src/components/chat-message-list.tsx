@@ -1,9 +1,9 @@
 import { ArrowDown, Loader2 } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { useChatStore } from "@/chat-store";
+import { useChatStore } from "@/client/stores/chat-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { CustomUIMessage } from "@/lib/client/types";
+import type { CustomUIMessage } from "@/types/models";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessage } from "./chat-message";
 

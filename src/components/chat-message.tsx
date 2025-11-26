@@ -9,7 +9,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import type { CustomUIMessage } from "@/lib/client/types";
+import type { CustomUIMessage } from "@/types/models";
 import { cn } from "@/lib/utils";
 import { CodeBlock } from "./code-block";
 

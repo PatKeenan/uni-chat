@@ -7,8 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { getClientDb } from "@/lib/client/db";
-import { folder } from "@/lib/client/db/schema";
+import { getClientDb } from "@/client/db";
+import { folder } from "@/client/db/schema";
 
 /**
  * Create a new folder

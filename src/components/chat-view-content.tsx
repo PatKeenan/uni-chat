@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { FolderOpen, Plus } from "lucide-react";
 import { useState } from "react";
-import { useChatStore } from "@/chat-store";
+import { useChatStore } from "@/client/stores/chat-store";
 import { ChatHeader } from "@/components/chat-header";
 import { ChatInput } from "@/components/chat-input";
 import { ChatMessageList } from "@/components/chat-message-list";
@@ -22,14 +22,14 @@ import {
   moveLocalChatToFolder,
   toggleLocalChatPin,
   updateLocalChatTitle,
-} from "@/lib/client/actions/chat-actions";
-import { getSession } from "@/lib/client/auth-client";
-import { useChatStream } from "@/lib/client/hooks/use-chat-stream";
+} from "@/client/actions/chat-actions";
+import { getSession } from "@/client/auth";
+import { useChatStream } from "@/client/hooks/use-chat-stream";
 import {
   useCreateLocalFolder,
   useLocalFolders,
-} from "@/lib/client/hooks/use-local-folders";
-import type { DB_Chat, DB_Message } from "@/lib/client/types";
+} from "@/client/hooks/use-local-folders";
+import type { DB_Chat, DB_Message } from "@/types/models";
 
 type ChatViewContentProps = {
   chat: DB_Chat;

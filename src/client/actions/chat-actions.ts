@@ -8,8 +8,8 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { getClientDb } from "@/lib/client/db";
-import { chat } from "@/lib/client/db/schema";
+import { getClientDb } from "@/client/db";
+import { chat } from "@/client/db/schema";
 /**
  * Create a new chat in local database
  *

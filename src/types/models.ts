@@ -6,8 +6,8 @@ import type {
   DB_Folder,
   DB_Message,
   DB_Starred_Model,
-} from "@/lib/client/db/schema";
-import type { getOpenRouterModels } from "../server/actions/model-actions";
+} from "@/client/db/schema";
+import type { getOpenRouterModels } from "@/server/actions/model-actions";
 
 type ChatId = DB_Chat["id"];
 type UserId = User["id"];

@@ -15,7 +15,7 @@ import {
   completeDataReset,
   type DataStats,
   getDataStats,
-} from "@/lib/client/actions/data-actions";
+} from "@/client/actions/data-actions";
 
 // ==================== Query Keys ====================
 

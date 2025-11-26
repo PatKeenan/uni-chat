@@ -13,9 +13,9 @@
 import { asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { getClientDb } from "@/lib/client/db";
-import { message } from "@/lib/client/db/schema";
-import type { CustomUIMessage, DB_Message } from "../types";
+import { getClientDb } from "@/client/db";
+import { message } from "@/client/db/schema";
+import type { CustomUIMessage, DB_Message } from "@/types/models";
 
 // ==================== Schemas ====================
 

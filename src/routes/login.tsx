@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, signIn } from "@/lib/client/auth-client";
+import { getSession, signIn } from "@/client/auth";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,

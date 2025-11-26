@@ -44,14 +44,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { deleteLocalChat } from "@/lib/client/actions/chat-actions";
-import { useLocalChats } from "@/lib/client/hooks/use-local-chats";
+import { deleteLocalChat } from "@/client/actions/chat-actions";
+import { useLocalChats } from "@/client/hooks/use-local-chats";
 import {
   useCreateLocalFolder,
   useDeleteLocalFolder,
   useLocalFolders,
   useUpdateLocalFolderName,
-} from "@/lib/client/hooks/use-local-folders";
+} from "@/client/hooks/use-local-folders";
 
 interface NavFoldersProps {
   userId: string;

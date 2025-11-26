@@ -10,8 +10,8 @@
 import { and, asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { getClientDb } from "@/lib/client/db";
-import { starredModel } from "@/lib/client/db/schema";
+import { getClientDb } from "@/client/db";
+import { starredModel } from "@/client/db/schema";
 import { fetchOpenRouterModels } from "@/lib/openrouter/client";
 
 // ==================== Schemas ====================

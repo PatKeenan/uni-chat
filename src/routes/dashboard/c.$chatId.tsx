@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { getLocalChatById } from "@/lib/client/actions/chat-actions";
-import { getUIMessages } from "@/lib/client/actions/message-actions";
+import { getLocalChatById } from "@/client/actions/chat-actions";
+import { getUIMessages } from "@/client/actions/message-actions";
 
 // Note: The loader type assertion is needed due to TanStack Router's type generation
 // having issues with the AI SDK's complex generic UIMessagePart types. The generated
@@ -46,9 +46,9 @@ export const Route = createFileRoute("/dashboard/c/$chatId")({
   },
 });
 
-import { useChatStore } from "@/chat-store";
+import { useChatStore } from "@/client/stores/chat-store";
 import { ChatViewContent } from "@/components/chat-view-content";
-import { getStarredModelMetadata } from "@/lib/client/actions/model-actions";
+import { getStarredModelMetadata } from "@/client/actions/model-actions";
 
 function ChatView() {
   // Type assertion needed due to TanStack Router type generation issues with AI SDK types

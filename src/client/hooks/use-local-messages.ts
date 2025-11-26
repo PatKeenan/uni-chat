@@ -13,8 +13,8 @@ import {
   getLocalMessages,
   getUIMessages,
   saveLocalMessages,
-} from "@/lib/client/actions/message-actions";
-import type { CustomUIMessage } from "../types";
+} from "@/client/actions/message-actions";
+import type { CustomUIMessage } from "@/types/models";
 import { chatKeys } from "./use-local-chats";
 
 /**

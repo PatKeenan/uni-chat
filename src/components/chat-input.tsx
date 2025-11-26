@@ -1,6 +1,6 @@
 import { Check, ChevronDown, Paperclip, Send } from "lucide-react";
 import { useState } from "react";
-import { useChatStore } from "@/chat-store";
+import { useChatStore } from "@/client/stores/chat-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +17,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { useSession } from "@/lib/client/auth-client";
-import { useStarredModels } from "@/lib/client/hooks/use-models";
+import { useSession } from "@/client/auth";
+import { useStarredModels } from "@/client/hooks/use-models";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {

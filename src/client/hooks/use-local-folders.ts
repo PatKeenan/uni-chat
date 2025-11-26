@@ -17,8 +17,8 @@ import {
 	updateLocalFolder,
 	updateLocalFolderColor,
 	updateLocalFolderName,
-} from "@/lib/client/actions/folder-actions";
-import type { folder } from "@/lib/client/db/schema";
+} from "@/client/actions/folder-actions";
+import type { folder } from "@/client/db/schema";
 import { chatKeys } from "./use-local-chats";
 
 /**

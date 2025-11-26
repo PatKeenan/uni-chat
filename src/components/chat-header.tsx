@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { DB_Chat, DB_Folder } from "@/lib/client/types";
+import type { DB_Chat, DB_Folder } from "@/types/models";
 
 interface ChatHeaderProps {
   chatId: DB_Chat["id"];

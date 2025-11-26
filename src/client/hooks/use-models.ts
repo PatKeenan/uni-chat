@@ -10,8 +10,8 @@ import {
   type StarModelInput,
   starModel,
   unstarModel,
-} from "@/lib/client/actions/model-actions";
-import { getApiKey } from "@/lib/client/storage/api-key";
+} from "@/client/actions/model-actions";
+import { getApiKey } from "@/client/storage/api-key";
 import { getOpenRouterModels } from "@/server/actions/model-actions";
 /**
  * Hook to fetch all available OpenRouter models
