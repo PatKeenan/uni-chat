@@ -57,7 +57,7 @@ import {
   removeDefaultModel,
   setDefaultModel,
 } from "@/lib/client/storage/default-model";
-import { getStarredModels } from "@/lib/server/actions/model-actions";
+import { getStarredModels } from "@/server/actions/model-actions";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsView,

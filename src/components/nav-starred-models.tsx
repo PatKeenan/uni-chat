@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { getStarredModels } from "@/lib/server/actions/model-actions";
+import { getStarredModels } from "@/server/actions/model-actions";
 
 export function NavStarredModels() {
   const { data: starredModels } = useSuspenseQuery({

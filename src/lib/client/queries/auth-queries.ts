@@ -1,4 +1,4 @@
-import { getUser } from "@/lib/server/actions/auth-actions";
+import { getUser } from "@/server/actions/auth-actions";
 
 export const getUserQuery = {
 	queryKey: ["user"],

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { globalMiddleware } from "@/lib/server/middleware/global-middleware";
+import { globalMiddleware } from "@/server/middleware/global-middleware";
 
 export const Route = createFileRoute("/api/auth/$")({
   server: {

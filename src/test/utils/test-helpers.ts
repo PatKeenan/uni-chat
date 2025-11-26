@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { vi } from "vitest";
-import type { session, user } from "@/lib/server/db/schema";
+import type { session, user } from "@/server/db/schema";
 
 // ============================================================
 // Mock Factories

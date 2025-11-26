@@ -15,7 +15,7 @@ import { getSession } from "@/lib/client/auth-client";
 import { useStarredModels } from "@/lib/client/hooks/use-models";
 import { getApiKey } from "@/lib/client/storage/api-key";
 import { getDefaultModel } from "@/lib/client/storage/default-model";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
+import { hasApiKey } from "@/server/actions/api-key-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/new")({

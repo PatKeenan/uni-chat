@@ -12,7 +12,7 @@ import {
   unstarModel,
 } from "@/lib/client/actions/model-actions";
 import { getApiKey } from "@/lib/client/storage/api-key";
-import { getOpenRouterModels } from "@/lib/server/actions/model-actions";
+import { getOpenRouterModels } from "@/server/actions/model-actions";
 /**
  * Hook to fetch all available OpenRouter models
  */

@@ -10,8 +10,8 @@ import type { DB_Message } from "@/lib/client/db/schema";
 import type { Model } from "@/lib/client/types";
 import { toUiMessages } from "@/lib/client/utils/to-ui-message";
 import { createOpenRouterClient } from "@/lib/openrouter/client";
-import { initWebSearchTool } from "@/lib/server/ai-tools/web-search";
-import { protectedMiddleware } from "@/lib/server/middleware/protected-middleware";
+import { initWebSearchTool } from "@/integrations/tavily/web-search";
+import { protectedMiddleware } from "@/server/middleware/protected-middleware";
 /**
  * POST /api/chat
  * Streams AI responses using Vercel AI SDK + OpenRouter
