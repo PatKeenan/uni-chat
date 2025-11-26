@@ -15,7 +15,7 @@ This document tracks progress on reorganizing the codebase into the domain struc
 | Client | COMPLETE | 100% |
 | Components | COMPLETE | 100% |
 | Integrations | COMPLETE | 100% |
-| Types | PARTIAL | 50% |
+| Types | COMPLETE | 100% |
 | Testing | No changes needed | N/A |
 
 **Last Updated:** 2025-11-26
@@ -261,24 +261,34 @@ After moving files, update imports in these locations:
 
 ### Tasks
 
-- [ ] Review `src/types/chat.ts` - keep as is
+- [x] Review `src/types/chat.ts` - keep as is
 - [x] Move `src/lib/client/types.ts` → `src/types/models.ts` (done in Phase 2)
-- [ ] Create `src/types/index.ts` for re-exports
+- [x] Create `src/types/index.ts` for re-exports
 - [x] Update imports (done in Phase 2)
-- [ ] Verify build
+- [x] Fix broken relative imports from previous migration
+- [x] Verify build
 
 ### Files to Move/Create
 
 | Source | Destination | Status |
 |--------|-------------|--------|
-| `src/types/chat.ts` | Keep | [ ] |
+| `src/types/chat.ts` | Keep | [x] |
 | `src/lib/client/types.ts` | `src/types/models.ts` | [x] |
-| (new file) | `src/types/index.ts` | [ ] |
+| (new file) | `src/types/index.ts` | [x] |
+
+### Import Fixes Required
+
+Fixed broken relative imports from previous migration phases:
+
+- [x] `src/client/stores/chat-store.ts` - `./lib/client/types` → `@/types/models`
+- [x] `src/client/db/schema/client-only.ts` - `../../types` → `@/types`
+- [x] `src/client/utils/to-ui-message.ts` - `../types` → `@/types`
 
 ### Verification
 
 - [x] `bun run build` succeeds
-- [ ] Type checking passes
+- [x] `bun test` passes (34 tests)
+- [x] Type checking passes (only pre-existing unrelated error in encryption.test.ts)
 
 ---
 
@@ -314,3 +324,4 @@ Record completed work here with dates:
 | 2025-11-26 | Phase 2 (Client) | Migrated all client files from `src/lib/client/` to `src/client/`, moved `chat-store.ts` to `src/client/stores/`, consolidated `use-mobile.ts` hooks, moved `types.ts` to `src/types/models.ts`, updated 27+ files, all imports updated, build and 34 tests passing | Claude (Opus 4.5) |
 | 2025-11-26 | Phase 3 (Components) | Organized components into feature subdirectories: 7 chat components → `src/components/chat/`, 6 nav components → `src/components/nav/`, 2 shared components → `src/components/shared/`. Updated imports in 4 files. Build and 34 tests passing | Claude (Opus 4.5) |
 | 2025-11-26 | Phase 4 (Integrations) | Migrated OpenRouter client from `src/lib/openrouter/client.ts` → `src/integrations/openrouter/client.ts`. Updated imports in 5 files. Deleted empty `src/lib/openrouter/` directory. `src/lib/` still contains `utils.ts` (shared utility used by 27 files). Build and 34 tests passing | Claude (Opus 4.5) |
+| 2025-11-26 | Phase 5 (Types) | Created `src/types/index.ts` for centralized type exports. Fixed 3 broken relative imports from previous migrations (`chat-store.ts`, `client-only.ts`, `to-ui-message.ts`). Types domain now exports from `@/types`: `TextPart`, `ToolCallPart`, `ToolResultPart`, `MessagePart`, `UIMessage` (from chat.ts) and `ChatId`, `UserId`, `Models`, `Model`, `ModelName`, `CustomUIMessage`, `CustomUIMessageData`, `CustomUIMessagePart`, `ChatMessageParts`, `DB_Chat`, `DB_Message`, `DB_Starred_Model`, `DB_Folder` (from models.ts). Build and 34 tests passing | Claude (Opus 4.5) |

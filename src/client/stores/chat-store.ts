@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Model, ModelName } from "./lib/client/types";
+import type { Model, ModelName } from "@/types/models";
 
 /**
  * Model capabilities derived from OpenRouter model metadata

@@ -1,4 +1,4 @@
-import type { CustomUIMessage, DB_Message } from "../types";
+import type { CustomUIMessage, DB_Message } from "@/types";
 
 export const toUiMessages = (messages: DB_Message[]): CustomUIMessage[] => {
 	return messages.map(toUiMessage);

@@ -28,7 +28,7 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import type { CustomUIMessage, CustomUIMessageData, Model } from "../../types";
+import type { CustomUIMessage, CustomUIMessageData, Model } from "@/types";
 
 // ==================== API Key (Local) ====================
 
