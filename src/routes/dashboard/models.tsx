@@ -17,7 +17,7 @@ import {
   useToggleModelStar,
 } from "@/client/hooks/use-models";
 import { getApiKey } from "@/client/storage/api-key";
-import type { OpenRouterModel } from "@/lib/openrouter/client";
+import type { OpenRouterModel } from "@/integrations/openrouter/client";
 import { hasApiKey } from "@/server/actions/api-key-actions";
 import { getOpenRouterModels } from "@/server/actions/model-actions";
 import { cn } from "@/lib/utils";

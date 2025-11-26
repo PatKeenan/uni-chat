@@ -12,7 +12,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getClientDb } from "@/client/db";
 import { starredModel } from "@/client/db/schema";
-import { fetchOpenRouterModels } from "@/lib/openrouter/client";
+import { fetchOpenRouterModels } from "@/integrations/openrouter/client";
 
 // ==================== Schemas ====================
 

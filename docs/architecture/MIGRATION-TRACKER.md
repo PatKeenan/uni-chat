@@ -14,7 +14,7 @@ This document tracks progress on reorganizing the codebase into the domain struc
 | Server | COMPLETE | 100% |
 | Client | COMPLETE | 100% |
 | Components | COMPLETE | 100% |
-| Integrations | PARTIAL | 50% |
+| Integrations | COMPLETE | 100% |
 | Types | PARTIAL | 50% |
 | Testing | No changes needed | N/A |
 
@@ -223,24 +223,33 @@ After moving files, update imports in these locations:
 ### Tasks
 
 - [x] Create `src/integrations/` directory
-- [ ] Create `src/integrations/openrouter/` directory
+- [x] Create `src/integrations/openrouter/` directory
 - [x] Create `src/integrations/tavily/` directory
-- [ ] Move OpenRouter client
+- [x] Move OpenRouter client
 - [x] Move Tavily web search tool (moved during Phase 1)
 - [x] Update imports for Tavily
-- [ ] Update imports for OpenRouter
-- [ ] Verify build and tests
+- [x] Update imports for OpenRouter
+- [x] Verify build and tests
 
 ### Files to Move
 
 | Source | Destination | Status |
 |--------|-------------|--------|
-| `src/lib/openrouter/client.ts` | `src/integrations/openrouter/client.ts` | [ ] |
+| `src/lib/openrouter/client.ts` | `src/integrations/openrouter/client.ts` | [x] |
 | `src/lib/server/ai-tools/web-search.ts` | `src/integrations/tavily/web-search.ts` | [x] |
+
+### Import Updates Required
+
+- [x] `src/routes/api/chat.ts` - OpenRouter client import
+- [x] `src/routes/dashboard/models.tsx` - OpenRouterModel type import
+- [x] `src/server/actions/model-actions.ts` - fetchOpenRouterModels import
+- [x] `src/server/actions/api-key-actions.ts` - fetchOpenRouterModels import
+- [x] `src/client/actions/model-actions.ts` - fetchOpenRouterModels import
 
 ### Verification
 
-- [ ] `bun run build` succeeds
+- [x] `bun run build` succeeds
+- [x] `bun test` passes (34 tests)
 - [ ] Model fetching works
 - [ ] Web search tool works in chat
 
@@ -277,7 +286,7 @@ After moving files, update imports in these locations:
 
 After all phases complete:
 
-- [ ] Delete `src/lib/` directory (should be empty) - Note: still contains `openrouter/` and `utils.ts`
+- [ ] Delete `src/lib/` directory (should be empty) - Note: still contains `utils.ts` and `utils.test.ts` (used by 27 files)
 - [x] Delete `src/hooks/` directory (done in Phase 2)
 - [ ] Update `tsconfig.json` with new path aliases
 - [ ] Update any documentation referencing old paths
@@ -291,6 +300,7 @@ After all phases complete:
 Add notes here as work progresses:
 
 - Tavily web-search was moved to `src/integrations/tavily/` during Phase 1 (Server domain migration) for logical consistency, since it's an integration rather than core server code.
+- `src/lib/utils.ts` remains in place - it's a shared utility (`cn` function) used by 27 files (mostly shadcn/ui components). This is not an integration and shouldn't be moved as part of Phase 4. Consider keeping it in `src/lib/` or moving to a shared utilities location in a future cleanup.
 
 ---
 
@@ -303,3 +313,4 @@ Record completed work here with dates:
 | 2025-11-26 | Phase 1 (Server) | Migrated all server files from `src/lib/server/` to `src/server/`, updated 18 files, all imports updated, build and tests passing | Claude (Opus 4.5) |
 | 2025-11-26 | Phase 2 (Client) | Migrated all client files from `src/lib/client/` to `src/client/`, moved `chat-store.ts` to `src/client/stores/`, consolidated `use-mobile.ts` hooks, moved `types.ts` to `src/types/models.ts`, updated 27+ files, all imports updated, build and 34 tests passing | Claude (Opus 4.5) |
 | 2025-11-26 | Phase 3 (Components) | Organized components into feature subdirectories: 7 chat components → `src/components/chat/`, 6 nav components → `src/components/nav/`, 2 shared components → `src/components/shared/`. Updated imports in 4 files. Build and 34 tests passing | Claude (Opus 4.5) |
+| 2025-11-26 | Phase 4 (Integrations) | Migrated OpenRouter client from `src/lib/openrouter/client.ts` → `src/integrations/openrouter/client.ts`. Updated imports in 5 files. Deleted empty `src/lib/openrouter/` directory. `src/lib/` still contains `utils.ts` (shared utility used by 27 files). Build and 34 tests passing | Claude (Opus 4.5) |

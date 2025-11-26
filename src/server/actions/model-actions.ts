@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { fetchOpenRouterModels } from "@/lib/openrouter/client";
+import { fetchOpenRouterModels } from "@/integrations/openrouter/client";
 import { starredModel } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
 /**
