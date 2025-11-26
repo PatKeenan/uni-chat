@@ -47,7 +47,7 @@ export const Route = createFileRoute("/dashboard/c/$chatId")({
 });
 
 import { useChatStore } from "@/client/stores/chat-store";
-import { ChatViewContent } from "@/components/chat-view-content";
+import { ChatViewContent } from "@/components/chat/chat-view-content";
 import { getStarredModelMetadata } from "@/client/actions/model-actions";
 
 function ChatView() {

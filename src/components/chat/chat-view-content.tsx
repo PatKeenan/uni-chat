@@ -3,9 +3,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { FolderOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { useChatStore } from "@/client/stores/chat-store";
-import { ChatHeader } from "@/components/chat-header";
-import { ChatInput } from "@/components/chat-input";
-import { ChatMessageList } from "@/components/chat-message-list";
+import { ChatHeader } from "@/components/chat/chat-header";
+import { ChatInput } from "@/components/chat/chat-input";
+import { ChatMessageList } from "@/components/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
