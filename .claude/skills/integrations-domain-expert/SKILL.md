@@ -1,55 +1,44 @@
 ---
 name: integrations-domain-expert
-description: |
-  Integrations domain expert for code review and validation. Use this skill when:
-  (1) Reviewing pull requests that touch src/integrations/
-  (2) Analyzing third-party API client implementations
-  (3) Validating tool definitions for Vercel AI SDK
-  (4) Detecting domain violations like module-level instances, missing descriptions, or debug logging
-  (5) A senior AI agent needs to validate code against Integrations domain best practices
-  Provides automated violation detection and actionable PR comments.
+description: Integrations domain expert for code review and validation. Use this skill when reviewing pull requests that touch src/integrations/, when analyzing third-party API client implementations, when validating Vercel AI SDK tool definitions, when detecting domain violations (module-level instances, missing descriptions, debug logging), or when a senior AI agent needs to validate code against Integrations domain best practices. Provides automated violation detection and actionable PR comments.
 ---
 
 # Integrations Domain Expert
 
-Expert validator for the Integrations domain (`src/integrations/`). Detects violations, validates patterns, and provides PR review comments.
+Expert reviewer for the Integrations domain (`src/integrations/`). Validates code against documented best practices and detects violations for pull request reviews.
 
-## Quick Reference
+## When This Skill Activates
 
-| Item | Value |
-|------|-------|
-| Domain Path | `src/integrations/` |
-| Best Practices | `docs/architecture/domains/integrations.md` |
-| Detection Script | `scripts/detect_violations.sh` |
+- PR touches files in `src/integrations/`
+- PR adds/modifies third-party API client code
+- PR adds/modifies Vercel AI SDK tool definitions
+- Senior agent requests integrations domain validation
+- Code review needs factory pattern or tool definition assessment
 
-## Violation Detection
+## Review Workflow
 
-Run automated detection:
+### Step 1: Run Automated Detection
+
+Execute the violation detection script:
 
 ```bash
+# Full scan
 bash .claude/skills/integrations-domain-expert/scripts/detect_violations.sh .
+
+# Output is JSON array with severity, file, line, message, suggestion
 ```
 
-**Output**: JSON array of violations with severity, file, line, message, and suggestion.
+The script detects these violations automatically:
+- **no-module-level-instances**: CRITICAL - SDK instantiation at module level
+- **no-console-log**: ERROR - Debug logging in production
+- **tool-must-have-description**: ERROR - Tool missing description field
+- **zod-field-needs-describe**: WARNING - Schema field without `.describe()`
+- **factory-naming-convention**: WARNING - `init*` instead of `create*`
+- **no-default-exports**: WARNING - Default export instead of named
+- **no-error-swallowing**: WARNING - Catch block returning null
+- **tavily-max-results-too-low**: WARNING - maxResults < 5
 
-**Exit Codes**: `0` = clean, `1` = violations found
-
-### Detected Rules
-
-| Rule | Severity | What It Catches |
-|------|----------|-----------------|
-| `no-module-level-instances` | CRITICAL | `const client = new SDK()` at module level |
-| `no-console-log` | ERROR | `console.log` in production code |
-| `tool-must-have-description` | ERROR | `tool({})` missing description field |
-| `zod-field-needs-describe` | WARNING | `z.string()` without `.describe()` |
-| `factory-naming-convention` | WARNING | `initTool` instead of `createTool` |
-| `no-default-exports` | WARNING | `export default` |
-| `no-error-swallowing` | WARNING | `catch { return null }` |
-| `tavily-max-results-too-low` | WARNING | `maxResults: 2` (should be >= 5) |
-
-## PR Review Workflow
-
-### Step 1: Check Domain Affected
+### Step 2: Check Domain Affected
 
 ```bash
 git diff --name-only origin/main...HEAD | grep "^src/integrations/"
@@ -57,13 +46,7 @@ git diff --name-only origin/main...HEAD | grep "^src/integrations/"
 
 Skip review if no matches.
 
-### Step 2: Run Detection
-
-```bash
-bash .claude/skills/integrations-domain-expert/scripts/detect_violations.sh .
-```
-
-### Step 3: Format PR Comments
+### Step 3: Generate PR Comments
 
 **For CRITICAL/ERROR** (request changes):
 ```
@@ -96,73 +79,27 @@ After automated detection, verify:
 - [ ] Results transformed to essential fields only
 - [ ] Types derived via `Awaited<ReturnType<...>>`
 
-## Core Rules
+## Quick Reference: Core Rules
 
-### CRITICAL: No Module-Level Instances
+| Rule | Severity | Quick Check |
+|------|----------|-------------|
+| No module-level instances | CRITICAL | `const client = new SDK()` at top level |
+| No console.log | ERROR | Any `console.log` in production |
+| Tool must have description | ERROR | `tool({})` without description |
+| Factory naming | WARNING | Use `create*` not `init*` |
+| Zod .describe() | WARNING | All schema fields need it |
 
-```typescript
-// BAD - Violates Cloudflare Workers isolation
-const client = new OpenRouter({ apiKey: process.env.KEY });
-export { client };
+## Quick Reference: Packages
 
-// GOOD - Per-request instantiation
-export function createClient(apiKey: string) {
-  return new OpenRouter({ apiKey });
-}
-```
+| Package | Key Requirement |
+|---------|-----------------|
+| `@openrouter/ai-sdk-provider` | HTTP-Referer + X-Title headers |
+| `@openrouter/sdk` | Beta - pin version |
+| `@tavily/core` | maxResults >= 5 |
+| `ai` (tools) | Use tool() helper; throw errors |
 
-### ERROR: No Console.log
+## Detailed Documentation
 
-```typescript
-// BAD
-console.log("response", response);
-
-// GOOD - Remove entirely
-```
-
-### ERROR: Tool Must Have Description
-
-```typescript
-// BAD
-tool({ inputSchema: z.object({...}), execute: async () => {} })
-
-// GOOD
-tool({
-  description: "Search the web for current information",
-  inputSchema: z.object({...}),
-  execute: async () => {}
-})
-```
-
-### WARNING: Factory Naming Convention
-
-```typescript
-// BAD
-export function initWebSearchTool() {}
-
-// GOOD
-export function createWebSearchTool() {}
-```
-
-### WARNING: Zod Fields Need .describe()
-
-```typescript
-// BAD
-z.string().min(1).max(100)
-
-// GOOD
-z.string().min(1).max(100).describe("The search query")
-```
-
-## Package Notes
-
-| Package | Key Points |
-|---------|------------|
-| `@openrouter/ai-sdk-provider` | Configure HTTP-Referer + X-Title headers |
-| `@openrouter/sdk` | Beta - pin version; new instance per call |
-| `@tavily/core` | maxResults >= 5; transform results |
-| `ai` (tools) | Use tool() helper; throw errors; .describe() all fields |
-
-## Reference
-
-Full documentation: Read `docs/architecture/domains/integrations.md` for complete best practices with examples.
+For full rules, examples, and rationale:
+- [references/best-practices.md](references/best-practices.md) - Complete best practices guide
+- [docs/architecture/domains/integrations.md](docs/architecture/domains/integrations.md) - Source documentation
