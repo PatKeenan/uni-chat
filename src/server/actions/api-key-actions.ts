@@ -6,6 +6,12 @@ import { fetchOpenRouterModels } from "@/integrations/openrouter/client";
 import { apiKey } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
 import { decryptApiKey, encryptApiKey } from "../utils/encryption";
+
+// ==================== Schemas ====================
+
+const ValidateApiKeySchema = z.object({
+  apiKey: z.string().min(1, "API key is required"),
+});
 /**
  * Saves or updates a user's OpenRouter API key
  * Encrypts the key before storing in the database
@@ -93,7 +99,7 @@ export const deleteApiKey = createServerFn()
  */
 export const validateApiKey = createServerFn()
   .middleware([protectedMiddleware])
-  .inputValidator((data: { apiKey: string }) => data)
+  .inputValidator(ValidateApiKeySchema)
   .handler(async ({ data }) => {
     try {
       // Attempt to fetch models to validate the key

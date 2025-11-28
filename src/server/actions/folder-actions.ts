@@ -4,14 +4,20 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { chat, folder } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
+
+// ==================== Schemas ====================
+
+const CreateFolderSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	icon: z.string().optional(),
+	color: z.string().optional(),
+});
 /**
  * Creates a new folder for organizing chats
  */
 export const createFolder = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(
-		(data: { name: string; icon?: string; color?: string }) => data,
-	)
+	.inputValidator(CreateFolderSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 

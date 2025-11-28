@@ -3,13 +3,12 @@ import { and, desc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { chat, folder } from "../db/schema";
-import { globalMiddleware } from "../middleware/global-middleware";
 import { protectedMiddleware } from "../middleware/protected-middleware";
 /**
  * Creates a new chat conversation
  */
 export const createChat = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.inputValidator(
 		z.object({
 			modelId: z.string(),
@@ -18,15 +17,11 @@ export const createChat = createServerFn()
 		}),
 	)
 	.handler(async ({ context, data }) => {
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
-
 		const { db } = context.config;
 
 		const newChat = {
 			id: nanoid(),
-			userId: context.user?.id,
+			userId: context.user.id,
 			selectedModel: data.modelId,
 			folderId: data.folderId || null,
 			title: data.title || null,
@@ -43,13 +38,9 @@ export const createChat = createServerFn()
  * Verifies the chat belongs to the requesting user
  */
 export const getChatById = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.inputValidator(z.object({ chatId: z.string() }))
 	.handler(async ({ context, data }) => {
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
-
 		const { db } = context.config;
 
 		const result = await db
@@ -70,13 +61,9 @@ export const getChatById = createServerFn()
  * Grouped by folder with uncategorized chats separate
  */
 export const getUserChats = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.handler(async ({ context }) => {
 		const { db } = context.config;
-
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		// Get all chats with folder info
 		const chats = await db
@@ -100,10 +87,6 @@ export const getMostRecentChat = createServerFn()
 	.handler(async ({ context }) => {
 		const { db } = context.config;
 
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
-
 		const result = await db
 			.select()
 			.from(chat)
@@ -122,9 +105,6 @@ export const updateChatTitle = createServerFn()
 	.inputValidator(z.object({ chatId: z.string(), title: z.string() }))
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		await db
 			.update(chat)
@@ -142,9 +122,6 @@ export const updateChatTimestamp = createServerFn()
 	.inputValidator(z.object({ chatId: z.string() }))
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		await db
 			.update(chat)
@@ -158,16 +135,12 @@ export const updateChatTimestamp = createServerFn()
  * Moves a chat to a different folder
  */
 export const moveChatToFolder = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.inputValidator(
 		z.object({ chatId: z.string(), folderId: z.string().nullable() }),
 	)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
-
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		await db
 			.update(chat)
@@ -181,14 +154,10 @@ export const moveChatToFolder = createServerFn()
  * Deletes a chat and all associated messages (cascade)
  */
 export const deleteChat = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.inputValidator(z.object({ chatId: z.string() }))
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
-
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		await db
 			.delete(chat)
@@ -201,13 +170,10 @@ export const deleteChat = createServerFn()
  * Toggles a chat's pinned status
  */
 export const togglePinChat = createServerFn()
-	.middleware([globalMiddleware, protectedMiddleware])
+	.middleware([protectedMiddleware])
 	.inputValidator(z.object({ chatId: z.string(), pinned: z.boolean() }))
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
-		if (!context.user?.id) {
-			throw new Error("User not found");
-		}
 
 		await db
 			.update(chat)

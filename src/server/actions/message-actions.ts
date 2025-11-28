@@ -1,22 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { message, messagePart } from "../db/schema";
+import type { CustomUIMessage } from "@/types";
+import { chat, message, messagePart } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
 
-// Message format compatible with AI SDK's UIMessage
-// This avoids generic type parameter issues while maintaining compatibility
-export type ChatMessage = {
-	id: string;
-	role: "user" | "assistant" | "system";
-	parts: Array<{
-		type: "text";
-		text: string;
-	}>;
-	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-	metadata?: Record<string, {}>;
-};
+// ==================== Schemas ====================
+
+const SaveMessagesSchema = z.object({
+	chatId: z.string().min(1, "Chat ID is required"),
+	messages: z.custom<CustomUIMessage[]>(
+		(val) => Array.isArray(val),
+		"Messages must be an array",
+	),
+});
+
+const DeleteMessagesForChatSchema = z.object({
+	chatId: z.string().min(1, "Chat ID is required"),
+});
 
 /**
  * Saves messages in UIMessage format to the database
@@ -28,7 +30,7 @@ export type ChatMessage = {
 
 export const saveMessages = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator((data: { chatId: string; messages: ChatMessage[] }) => data)
+	.inputValidator(SaveMessagesSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -40,42 +42,45 @@ export const saveMessages = createServerFn()
 
 		const existingIds = new Set(existingMessages.map((m) => m.id));
 
-		for (let i = 0; i < data.messages.length; i++) {
-			const msg = data.messages[i];
-			const messageId = msg.id || nanoid();
+		// Wrap all inserts in a transaction for data integrity
+		await db.transaction(async (tx) => {
+			for (let i = 0; i < data.messages.length; i++) {
+				const msg = data.messages[i];
+				const messageId = msg.id || nanoid();
 
-			// Skip if message already exists
-			if (existingIds.has(messageId)) {
-				continue;
-			}
+				// Skip if message already exists
+				if (existingIds.has(messageId)) {
+					continue;
+				}
 
-			// Insert new message row
-			await db.insert(message).values({
-				id: messageId,
-				chatId: data.chatId,
-				role: msg.role,
-				order: i,
-			});
+				// Insert new message row
+				await tx.insert(message).values({
+					id: messageId,
+					chatId: data.chatId,
+					role: msg.role,
+					order: i,
+				});
 
-			// Insert message parts for new message
-			if (msg.parts && Array.isArray(msg.parts)) {
-				for (let j = 0; j < msg.parts.length; j++) {
-					const part = msg.parts[j];
+				// Insert message parts for new message
+				if (msg.parts && Array.isArray(msg.parts)) {
+					for (let j = 0; j < msg.parts.length; j++) {
+						const part = msg.parts[j];
 
-					// For now, we only handle text parts
-					// Tool calls can be added later when needed
-					if (part.type === "text" && "text" in part) {
-						await db.insert(messagePart).values({
-							id: nanoid(),
-							messageId,
-							type: part.type,
-							order: j,
-							textContent: part.text as string,
-						});
+						// For now, we only handle text parts
+						// Tool calls can be added later when needed
+						if (part.type === "text" && "text" in part) {
+							await tx.insert(messagePart).values({
+								id: nanoid(),
+								messageId,
+								type: part.type,
+								order: j,
+								textContent: part.text as string,
+							});
+						}
 					}
 				}
 			}
-		}
+		});
 
 		return { success: true };
 	});
@@ -122,7 +127,7 @@ export const getMessagesByChatId = createServerFn()
 		}
 
 		// Reconstruct messages in AI SDK UIMessage format
-		const chatMessages: ChatMessage[] = messages.map((msg) => {
+		const chatMessages = messages.map((msg) => {
 			const parts = partsByMessageId.get(msg.id) || [];
 
 			// Sort parts by order
@@ -152,9 +157,20 @@ export const getMessagesByChatId = createServerFn()
  */
 export const deleteMessagesForChat = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator((data: { chatId: string }) => data)
+	.inputValidator(DeleteMessagesForChatSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
+
+		// Verify user owns the chat before deleting messages
+		const userChat = await db
+			.select({ id: chat.id })
+			.from(chat)
+			.where(and(eq(chat.id, data.chatId), eq(chat.userId, context.user.id)))
+			.limit(1);
+
+		if (!userChat[0]) {
+			throw new Error("Chat not found");
+		}
 
 		// Delete all messages (parts will cascade)
 		await db.delete(message).where(eq(message.chatId, data.chatId));
