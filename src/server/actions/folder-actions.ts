@@ -102,11 +102,13 @@ export const deleteFolder = createServerFn()
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
-		// First, set all chats in this folder to null folderId
+		// First, set all chats in this folder to null folderId (with user ownership check)
 		await db
 			.update(chat)
 			.set({ folderId: null })
-			.where(eq(chat.folderId, data.folderId));
+			.where(
+				and(eq(chat.folderId, data.folderId), eq(chat.userId, context.user.id)),
+			);
 
 		// Then delete the folder
 		await db

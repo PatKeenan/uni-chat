@@ -4,18 +4,43 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { chat, folder } from "../db/schema";
 import { protectedMiddleware } from "../middleware/protected-middleware";
+
+// ==================== Schemas ====================
+
+const CreateChatSchema = z.object({
+	modelId: z.string(),
+	folderId: z.string().optional(),
+	title: z.string().optional(),
+});
+
+const ChatIdSchema = z.object({ chatId: z.string() });
+
+const UpdateChatTitleSchema = z.object({
+	chatId: z.string(),
+	title: z.string(),
+});
+
+const MoveChatToFolderSchema = z.object({
+	chatId: z.string(),
+	folderId: z.string().nullable(),
+});
+
+const TogglePinChatSchema = z.object({
+	chatId: z.string(),
+	pinned: z.boolean(),
+});
+
+const UpdateChatModelSchema = z.object({
+	chatId: z.string(),
+	modelId: z.string(),
+});
+
 /**
  * Creates a new chat conversation
  */
 export const createChat = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(
-		z.object({
-			modelId: z.string(),
-			folderId: z.string().optional(),
-			title: z.string().optional(),
-		}),
-	)
+	.inputValidator(CreateChatSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -39,7 +64,7 @@ export const createChat = createServerFn()
  */
 export const getChatById = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string() }))
+	.inputValidator(ChatIdSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -102,7 +127,7 @@ export const getMostRecentChat = createServerFn()
  */
 export const updateChatTitle = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string(), title: z.string() }))
+	.inputValidator(UpdateChatTitleSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -119,7 +144,7 @@ export const updateChatTitle = createServerFn()
  */
 export const updateChatTimestamp = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string() }))
+	.inputValidator(ChatIdSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -136,9 +161,7 @@ export const updateChatTimestamp = createServerFn()
  */
 export const moveChatToFolder = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(
-		z.object({ chatId: z.string(), folderId: z.string().nullable() }),
-	)
+	.inputValidator(MoveChatToFolderSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -155,7 +178,7 @@ export const moveChatToFolder = createServerFn()
  */
 export const deleteChat = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string() }))
+	.inputValidator(ChatIdSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -171,7 +194,7 @@ export const deleteChat = createServerFn()
  */
 export const togglePinChat = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string(), pinned: z.boolean() }))
+	.inputValidator(TogglePinChatSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
@@ -188,7 +211,7 @@ export const togglePinChat = createServerFn()
  */
 export const updateChatModel = createServerFn()
 	.middleware([protectedMiddleware])
-	.inputValidator(z.object({ chatId: z.string(), modelId: z.string() }))
+	.inputValidator(UpdateChatModelSchema)
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 

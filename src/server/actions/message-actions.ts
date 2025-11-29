@@ -34,6 +34,17 @@ export const saveMessages = createServerFn()
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
+		// Verify user owns the chat before saving messages
+		const userChat = await db
+			.select({ id: chat.id })
+			.from(chat)
+			.where(and(eq(chat.id, data.chatId), eq(chat.userId, context.user.id)))
+			.limit(1);
+
+		if (!userChat[0]) {
+			throw new Error("Chat not found");
+		}
+
 		// Get existing message IDs for this chat to avoid duplicates
 		const existingMessages = await db
 			.select({ id: message.id })
@@ -94,6 +105,17 @@ export const getMessagesByChatId = createServerFn()
 	.inputValidator(z.object({ chatId: z.string() }))
 	.handler(async ({ context, data: { chatId } }) => {
 		const { db } = context.config;
+
+		// Verify user owns the chat before fetching messages
+		const userChat = await db
+			.select({ id: chat.id })
+			.from(chat)
+			.where(and(eq(chat.id, chatId), eq(chat.userId, context.user.id)))
+			.limit(1);
+
+		if (!userChat[0]) {
+			throw new Error("Chat not found");
+		}
 
 		// Get all messages for this chat
 		const messages = await db
