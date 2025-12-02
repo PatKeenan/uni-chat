@@ -10,12 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { createLocalChat } from "@/lib/client/actions/chat-actions";
-import { getSession } from "@/lib/client/auth-client";
-import { useStarredModels } from "@/lib/client/hooks/use-models";
-import { getApiKey } from "@/lib/client/storage/api-key";
-import { getDefaultModel } from "@/lib/client/storage/default-model";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
+import { createLocalChat } from "@/client/actions/chat-actions";
+import { getSession } from "@/client/auth";
+import { useStarredModels } from "@/client/hooks/use-models";
+import { getApiKey } from "@/client/storage/api-key";
+import { getDefaultModel } from "@/client/storage/default-model";
+import { hasApiKey } from "@/server/actions/api-key-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/new")({

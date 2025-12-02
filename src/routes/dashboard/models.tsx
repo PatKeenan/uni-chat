@@ -15,11 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useStarredModels,
   useToggleModelStar,
-} from "@/lib/client/hooks/use-models";
-import { getApiKey } from "@/lib/client/storage/api-key";
-import type { OpenRouterModel } from "@/lib/openrouter/client";
-import { hasApiKey } from "@/lib/server/actions/api-key-actions";
-import { getOpenRouterModels } from "@/lib/server/actions/model-actions";
+} from "@/client/hooks/use-models";
+import { getApiKey } from "@/client/storage/api-key";
+import type { OpenRouterModel } from "@/integrations/openrouter/client";
+import { hasApiKey } from "@/server/actions/api-key-actions";
+import { getOpenRouterModels } from "@/server/actions/model-actions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/models")({

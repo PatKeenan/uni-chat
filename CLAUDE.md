@@ -4,12 +4,139 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack application built with TanStack Start (React Server Framework) designed to run on Cloudflare Workers. It features:
+Uni-Chat is a full-stack AI chat application built with TanStack Start (React Server Framework) designed to run on Cloudflare Workers. It features:
 - Server-side rendering with TanStack Router
-- PostgreSQL database with Drizzle ORM
+- PostgreSQL database with Drizzle ORM (server-side)
+- PGlite for client-side local storage
 - Better Auth for authentication
-- Tailwind CSS with Radix UI components
+- OpenRouter for LLM provider access
+- Tailwind CSS with shadcn/ui components
 - Vitest for testing
+
+## Domain Architecture
+
+The codebase is organized into 7 distinct domains. Each domain has a clear purpose and boundary.
+
+```
+src/
+├── routes/         # Page routes, API endpoints, layouts
+├── server/         # All server-side code
+├── client/         # All client-side code
+├── components/     # React UI components
+├── integrations/   # Third-party API clients
+├── types/          # Shared TypeScript definitions
+├── test/           # Test infrastructure
+└── lib/            # Shared utilities (cn function)
+```
+
+### Domain 1: Routing (`src/routes/`)
+
+File-based routing with TanStack Router. Contains page components, layouts, and API endpoints.
+
+**Key files:**
+- `__root.tsx` - Root HTML shell
+- `dashboard.tsx` - Protected layout wrapper
+- `dashboard/c.$chatId.tsx` - Individual chat view
+- `api/auth/$.ts` - Better Auth handler
+- `api/chat.ts` - Streaming chat endpoint
+
+**Rules:**
+- Routes define pages and API endpoints only
+- Business logic lives in Server or Client domains
+- Loaders call server actions, not database directly
+
+### Domain 2: Server (`src/server/`)
+
+All server-side code including server functions, middleware, database, and authentication.
+
+**Structure:**
+- `actions/` - Server functions (`createServerFn`)
+- `middleware/` - Request middleware (global → auth → protected)
+- `db/` - Database layer and schema
+- `auth/` - Better Auth configuration
+- `utils/` - Server utilities (encryption)
+- `config.ts` - `loadConfig()` function
+
+**Key pattern - Per-request isolation (Cloudflare Workers):**
+```typescript
+// Always use loadConfig() or middleware context
+const { db, auth } = loadConfig();
+
+// Never create module-level instances
+```
+
+### Domain 3: Client (`src/client/`)
+
+All client-side code including hooks, stores, local database, and client actions.
+
+**Structure:**
+- `hooks/` - React hooks (use-chat-stream, use-local-chats, etc.)
+- `stores/` - Zustand stores (chat-store)
+- `actions/` - Client-side mutations
+- `queries/` - TanStack Query definitions
+- `db/` - PGlite local database
+- `storage/` - localStorage utilities
+- `utils/` - Client utilities
+- `auth.ts` - Auth client (signIn, signOut)
+
+**Rules:**
+- All React hooks live in `hooks/`
+- Zustand stores live in `stores/`
+- No server imports allowed
+
+### Domain 4: Components (`src/components/`)
+
+React UI components organized by feature area.
+
+**Structure:**
+- `ui/` - shadcn/ui primitives (button, input, dialog, etc.)
+- `chat/` - Chat feature components
+- `nav/` - Navigation components (sidebar, folders)
+- `shared/` - Shared utilities (error boundaries)
+
+**Rules:**
+- `ui/` contains only generic, reusable primitives
+- Feature components grouped by feature (chat, nav)
+- No business logic in components - delegate to hooks/stores
+
+### Domain 5: Integrations (`src/integrations/`)
+
+Third-party API clients and external service integrations.
+
+**Structure:**
+- `openrouter/` - OpenRouter LLM provider client
+- `tavily/` - Tavily web search tool
+
+**Rules:**
+- Each integration in its own directory
+- Clients are factory functions (for per-request isolation)
+- Easy to swap or remove integrations
+
+### Domain 6: Types (`src/types/`)
+
+Shared TypeScript type definitions used across domains.
+
+**Files:**
+- `index.ts` - Re-exports all types
+- `chat.ts` - Chat, Message, MessagePart types
+- `models.ts` - Model, DB schema types
+
+**Rules:**
+- Only types used across multiple domains go here
+- Domain-specific types stay in their domain
+- No runtime code, only type definitions
+
+### Domain 7: Testing (`src/test/`)
+
+Test infrastructure, mocks, and utilities.
+
+**Rules:**
+- Test files live next to source files (`*.test.ts`)
+- Shared mocks and utilities in `src/test/`
+
+### Shared Utilities (`src/lib/`)
+
+Contains the `cn()` function for Tailwind class merging. This is the standard shadcn/ui convention location.
 
 ## Development Commands
 
@@ -31,132 +158,44 @@ This is a full-stack application built with TanStack Start (React Server Framewo
 - `bun deploy` - Build and deploy to Cloudflare Workers
 - `bun cf-typegen` - Generate TypeScript types for Cloudflare Workers
 
-### Local Database Setup
-```bash
-docker-compose up -d  # Start PostgreSQL container
-bun db:generate      # Generate migrations
-bun db:migrate       # Run migrations
-```
+## Key Patterns
 
-## Architecture
-
-### Cloudflare Workers I/O Isolation Pattern
+### Cloudflare Workers I/O Isolation
 
 **CRITICAL**: This application follows a per-request isolation pattern required for Cloudflare Workers:
 
-1. **Database Connections**: Always use `createDb()` per request, never share connections
-   - Located in `src/lib/server/db/index.ts`
-   - Uses `max: 1` connection pool for serverless compatibility
-   - Wrapped in `createServerOnlyFn()` for automatic per-request isolation
+```typescript
+// GOOD: Per-request instances via middleware
+export const myAction = createServerFn()
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const { db, auth } = context.config;
+    // Use db and auth here
+  });
 
-2. **Auth Instances**: Always use `getAuth(db)` factory pattern, never export module-level instances
-   - Located in `src/lib/server/auth/index.ts`
-   - Takes a database instance and returns a Better Auth instance
-   - Must be created per-request via `loadConfig()`
+// BAD: Module-level instances (never do this)
+const db = createDb();
+export { db };
+```
 
-3. **Config Loading**: Use `loadConfig()` to create per-request instances
-   - Located in `src/lib/server/loadConfig.ts`
-   - Creates fresh `db` and `auth` instances for each request
-   - Available in middleware context as `context.config`
-
-### Middleware Architecture
+### Middleware Composition
 
 Middleware are composable and chainable:
+1. `globalMiddleware` - Loads config with per-request db/auth
+2. `authMiddleware` - Extends global, fetches session/user
+3. `protectedMiddleware` - Extends auth, enforces authentication
 
-1. **globalMiddleware** (`src/lib/server/middleware/global-middleware.ts`)
-   - Loads config with per-request db/auth instances
-   - Adds `config` to context
-   - Base middleware for all server operations
-
-2. **authMiddleware** (`src/lib/server/middleware/auth-middleware.ts`)
-   - Extends globalMiddleware
-   - Fetches session/user data via `context.config.auth`
-   - Adds `session` and `user` to context
-
-3. **protectedMiddleware** (`src/lib/server/middleware/protected-middleware.ts`)
-   - Extends authMiddleware
-   - Throws 401 if no user in context
-   - Use for protected routes/actions
-
-### File-Based Routing
-
-Routes are managed as files in `src/routes/`:
-- `__root.tsx` - Layout wrapper with `<Outlet />` for child routes
-- Route files export TanStack Router route definitions
-- API routes in `src/routes/api/` handle server endpoints
-- Auth API catch-all at `src/routes/api/auth/$.ts` handles all Better Auth endpoints
-
-### Data Fetching Patterns
-
-1. **Route Loaders**: Use TanStack Router's `loader` for SSR data fetching
-2. **React Query**: Available for client-side data fetching and caching
-3. **Server Actions**: Create in `src/lib/server/actions/` for form submissions/mutations
-
-### Database Schema
-
-Located in `src/lib/server/db/schema.ts`:
-- `user` - User accounts
-- `session` - Auth sessions
-- `account` - OAuth/provider accounts
-- `verification` - Email verification tokens
-
-After schema changes:
-1. Run `bun db:generate` to create migrations
-2. Run `bun db:migrate` to apply migrations
-
-### Path Aliases
+### Path Alias
 
 TypeScript path alias `@/*` maps to `src/*`:
 ```typescript
-import { createDb } from "@/lib/server/db";
+import { createDb } from "@/server/db";
+import { useChatStream } from "@/client/hooks/use-chat-stream";
+import { Button } from "@/components/ui/button";
 ```
 
-### Authentication Flow
+## Detailed Architecture Documentation
 
-- Client-side auth via `src/lib/client/auth-client.ts` (Better Auth React hooks)
-- Server-side session validation in authMiddleware
-- Protected routes use protectedMiddleware to enforce authentication
-- Auth API endpoints handled by Better Auth at `/api/auth/*`
-
-## Important Patterns
-
-### Never Do This (Cloudflare Workers Anti-Patterns)
-```typescript
-// ❌ BAD: Module-level instances
-const db = createDb();
-const auth = getAuth(db);
-export { db, auth };
-```
-
-### Always Do This Instead
-```typescript
-// ✅ GOOD: Per-request instances
-export const myAction = createServerOnlyFn(async () => {
-  const { db, auth } = loadConfig();
-  // Use db and auth here
-});
-
-// ✅ GOOD: Via middleware context
-export const Route = createFileRoute("/my-route")({
-  server: {
-    middleware: [authMiddleware],
-    handlers: {
-      GET: async ({ context }) => {
-        // Use context.config.db and context.config.auth
-      }
-    }
-  }
-});
-```
-
-### Component Organization
-
-- `src/components/ui/` - Radix UI-based primitives (generated via shadcn/ui pattern)
-- `src/components/` - Application-specific components
-- Files prefixed with `demo` can be safely deleted
-
-### Styling
-
-- Tailwind CSS v4 with Vite plugin
-- Class utilities via `src/lib/utils.ts` (cn function)
-- Responsive design with mobile-first approach
+For detailed migration history and domain specifications, see:
+- [docs/architecture/DOMAIN-ARCHITECTURE.md](docs/architecture/DOMAIN-ARCHITECTURE.md)
+- [docs/architecture/MIGRATION-TRACKER.md](docs/architecture/MIGRATION-TRACKER.md)
