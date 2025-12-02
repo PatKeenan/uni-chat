@@ -1,214 +1,84 @@
 ---
-description: Create an implementation plan for a feature or task using parallel research
+description: Decompose a task into a comprehensive coding brief with patterns, rules, and review requirements. Run this BEFORE starting any feature implementation.
+allowed-tools: Task, Read, Grep, Glob, LS, Bash
+argument-hint: <task description>
 ---
 
-# Create Plan
+# Plan Feature Implementation
 
-You are tasked with creating a detailed implementation plan for a feature or task. This command orchestrates research subagents to gather context, then produces a structured plan with clear phases and success criteria.
+You are about to start implementing a new feature or task. Before writing any code, this command will:
 
-## Initial Response
+1. **Research the codebase** to find relevant files and patterns
+2. **Identify affected domains** (client, server, components, routes, etc.)
+3. **Extract patterns to follow** with exact file:line references
+4. **Surface domain rules** that the reviewer will check
+5. **Define commit standards** and evidence requirements
+6. **Produce a coding brief** that maximizes first-pass approval
 
-```
-I'll help create an implementation plan. Please describe:
+## Task Description
 
-1. **What** you want to build or change
-2. **Why** (optional context on motivation)
-3. **Any constraints** (must use existing patterns, backward compatibility, etc.)
+$ARGUMENTS
 
-I'll research the codebase and create a phased implementation plan.
-```
+## Instructions
 
-## Planning Process
+Invoke the `task-planner` subagent with the task description above.
 
-### Step 1: Understand the Request
+The task-planner will:
 
-Parse the user's description for:
-- Core functionality needed
-- Integration points with existing code
-- Constraints or requirements mentioned
-- Success criteria (explicit or implied)
+### Phase 1: Research
 
-### Step 2: Research Phase (Parallel Subagents)
+- Use `codebase-locator` to find where code should live
+- Use `codebase-pattern-finder` to find similar implementations
+- Use `codebase-analyzer` to understand integration points
+- Use `git-historian` to check recent relevant changes
 
-Spawn agents to gather implementation context:
+### Phase 2: Plan
 
-```
-Task 1 - codebase-locator:
-Find files relevant to implementing [feature]:
-- Where would new code live based on existing structure?
-- What existing files need modification?
-- What related features exist?
-Return: File locations organized by: needs modification, integration points, examples to follow
-```
+- Identify all domains affected
+- Map files to create and modify
+- Extract specific patterns to follow
+- Load applicable domain rules
 
-```
-Task 2 - codebase-pattern-finder:
-Find patterns to follow for [feature]:
-- Similar features already implemented
-- Conventions for this type of code (routes, actions, hooks, etc.)
-- Testing patterns used
-Return: Code examples with file:line references showing established patterns
-```
+### Phase 3: Output
 
-```
-Task 3 - codebase-analyzer:
-Analyze the integration points for [feature]:
-- How do related systems work?
-- What interfaces need to be respected?
-- What data flows exist that this feature touches?
-Return: Technical analysis of systems this feature will interact with
-```
+- Generate comprehensive coding brief
+- Include exact file:line pattern references
+- List all rules that will be checked
+- Define commit sequence
+- Specify evidence requirements
 
-```
-Task 4 - git-historian (if modifying existing code):
-Research history of files being modified:
-- Why were they structured this way?
-- Any past attempts at similar changes?
-- Recent changes that might affect approach?
-Return: Historical context relevant to the implementation
-```
+## Expected Output
 
-### Step 3: Synthesize Research
+A complete coding brief containing:
 
-Compile findings into implementation context:
-- What patterns to follow
-- What files to create/modify
-- What interfaces to respect
-- What pitfalls to avoid
+1. **Task Summary** - What needs to be built
+2. **Domains Affected** - Which areas of the codebase
+3. **Files to Create/Modify** - With pattern sources
+4. **Patterns to Follow** - Actual code examples with references
+5. **Domain Rules** - Checklist of what reviewer checks
+6. **Commit Standards** - Sequence and format
+7. **Evidence Requirements** - What to provide for review
+8. **Reference Documentation** - Links to best practices
 
-### Step 4: Create the Plan
+## Success Criteria
 
-Structure the plan with clear phases:
+The coding brief is successful if a coding agent following it:
 
-```markdown
-## Implementation Plan: [Feature Name]
+- Knows exactly what files to create
+- Has patterns to copy from
+- Understands all applicable rules
+- Will produce atomic, well-messaged commits
+- Knows what evidence to capture
+- Can pass code review without changes
 
-### Overview
-[2-3 sentences describing what will be built and the approach]
+## After Planning
 
-### Research Summary
-Based on codebase analysis:
-- **Pattern to follow**: [Example from codebase-pattern-finder]
-- **Integration points**: [From codebase-analyzer]
-- **Files involved**: [From codebase-locator]
+Once the coding brief is ready, you can either:
+
+- Review and adjust the plan
+- Proceed to implementation with `/implement` (if that command exists)
+- Start coding manually with the brief as your guide
 
 ---
 
-### Phase 1: [Foundation/Setup]
-**Goal**: [What this phase accomplishes]
-
-#### Changes
-1. **Create `src/path/to/new-file.ts`**
-   - [What this file does]
-   - Follow pattern from `src/path/to/example.ts:20-45`
-
-2. **Modify `src/path/to/existing.ts`**
-   - Add [what] at [where]
-   - Integrate with existing [what]
-
-#### Success Criteria
-**Automated**:
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm test` passes
-- [ ] `pnpm lint` passes
-
-**Manual**:
-- [ ] [Specific verification step]
-
----
-
-### Phase 2: [Core Implementation]
-**Goal**: [What this phase accomplishes]
-
-#### Changes
-1. **[File/component]**
-   - [Specific changes]
-
-#### Success Criteria
-**Automated**:
-- [ ] Tests pass
-- [ ] Types check
-
-**Manual**:
-- [ ] [Verification step]
-
----
-
-### Phase 3: [Integration/Polish]
-**Goal**: [What this phase accomplishes]
-
-#### Changes
-[...]
-
-#### Success Criteria
-[...]
-
----
-
-### Notes
-- **Patterns used**: [List conventions followed]
-- **Not in scope**: [Explicit boundaries]
-- **Future considerations**: [Things to think about later, not now]
-```
-
-### Step 5: Review with User
-
-Present the plan and ask:
-```
-Here's the implementation plan for [feature].
-
-Key decisions made:
-- [Decision 1]: [Rationale based on research]
-- [Decision 2]: [Rationale]
-
-Questions before we proceed:
-- [Any ambiguity that needs clarification]
-
-Does this plan look good? Any adjustments needed?
-```
-
-## Plan Quality Guidelines
-
-### Good Phases
-- **Single responsibility** - Each phase has one clear goal
-- **Independently verifiable** - Can confirm phase works before moving on
-- **Builds on previous** - Later phases depend on earlier ones
-- **Small enough to review** - Not too many changes per phase
-
-### Good Success Criteria
-- **Automated first** - typecheck, test, lint
-- **Specific manual steps** - "Click X, expect Y" not "verify it works"
-- **Measurable** - Can definitively say pass/fail
-
-### Good Changes
-- **Precise locations** - File paths, line numbers when modifying
-- **Pattern references** - "Follow pattern from X" with concrete example
-- **Clear rationale** - Why this approach based on research
-
-## Codebase-Specific Patterns
-
-For this TanStack Start + Cloudflare Workers codebase:
-
-**New Server Action**:
-- Create in `src/lib/server/actions/`
-- Use `createServerFn()` pattern
-- Apply appropriate middleware (globalMiddleware, authMiddleware, protectedMiddleware)
-- Access db/auth via `context.config`
-
-**New Route**:
-- Create in `src/routes/`
-- Follow TanStack Router conventions
-- Use loaders for SSR data
-
-**New Client Hook**:
-- Create in `src/lib/client/hooks/`
-- Follow existing naming: `use-feature.ts`
-
-**New Component**:
-- Create in `src/components/`
-- Use Radix primitives from `src/components/ui/`
-- Style with Tailwind
-
-**Database Changes**:
-- Schema in `src/lib/server/db/schema/`
-- Run `pnpm db:generate` then `pnpm db:migrate`
+**Remember:** 5 minutes of planning saves hours of rework. The goal is zero surprises at review time.

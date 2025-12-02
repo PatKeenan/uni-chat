@@ -109,6 +109,14 @@ check_module_level_instances() {
 }
 
 # S002: Check for queries without user ownership filter
+#
+# This check looks for DELETE/UPDATE operations that may be missing user ownership
+# verification. It handles several patterns to avoid false positives:
+#
+# 1. Multi-line and() - checks next 5 lines for and() with userId/user.id
+# 2. Prior ownership check - looks for ownership verification before the operation
+# 3. userId-keyed tables - recognizes when userId IS the primary filter (e.g., apiKey table)
+#
 check_missing_user_filter() {
     local file="$1"
 
@@ -117,13 +125,79 @@ check_missing_user_filter() {
         return
     fi
 
-    # Find delete operations without and() - likely missing user check
-    grep -n "\.delete(" "$file" 2>/dev/null | grep -v "and(" | while IFS= read -r line; do
+    # Helper: Check if a code block (lines) contains user ownership filter
+    # Returns 0 (true) if ownership is present, 1 (false) if missing
+    has_user_ownership_in_context() {
+        local file="$1"
+        local start_line="$2"
+        local context_lines="${3:-5}"
+
+        # Get the operation and following lines (for multi-line .where(and(...)))
+        local end_line=$((start_line + context_lines))
+        local context
+        context=$(sed -n "${start_line},${end_line}p" "$file")
+
+        # Pattern 1: and() with userId or user.id in the context
+        if echo "$context" | grep -qE "and\s*\(" && echo "$context" | grep -qE "userId|user\.id|context\.user\.id"; then
+            return 0
+        fi
+
+        # Pattern 2: Direct userId filter (for user-keyed tables like apiKey)
+        # e.g., .where(eq(apiKey.userId, context.user.id))
+        if echo "$context" | grep -qE "\.where\s*\(\s*eq\s*\([^,]+\.userId\s*,\s*context\.user\.id\)"; then
+            return 0
+        fi
+
+        return 1
+    }
+
+    # Helper: Check if there's a prior ownership verification in the same handler
+    # Looks for pattern: select + where + userId check + throw on not found
+    has_prior_ownership_check() {
+        local file="$1"
+        local op_line="$2"
+
+        # Find the handler start (look backwards for .handler(async)
+        local handler_start
+        handler_start=$(head -n "$op_line" "$file" | grep -n "\.handler(async" | tail -1 | cut -d: -f1)
+
+        if [[ -z "$handler_start" ]]; then
+            return 1
+        fi
+
+        # Get code between handler start and our operation
+        local handler_context
+        handler_context=$(sed -n "${handler_start},${op_line}p" "$file")
+
+        # Look for ownership check pattern:
+        # 1. Select from a parent table (e.g., chat) with userId filter
+        # 2. Followed by a throw/error if not found
+        if echo "$handler_context" | grep -qE "\.select\s*\(" && \
+           echo "$handler_context" | grep -qE "context\.user\.id" && \
+           echo "$handler_context" | grep -qE "throw new Error|throw json"; then
+            return 0
+        fi
+
+        return 1
+    }
+
+    # Find delete operations and check for ownership
+    grep -n "\.delete(" "$file" 2>/dev/null | while IFS= read -r line; do
         local line_num=$(echo "$line" | cut -d: -f1)
         local content=$(echo "$line" | cut -d: -f2-)
 
         # Skip if it's a comment
         if echo "$content" | grep -q "^\s*//"; then
+            continue
+        fi
+
+        # Check for user ownership in context (multi-line patterns)
+        if has_user_ownership_in_context "$file" "$line_num" 5; then
+            continue
+        fi
+
+        # Check for prior ownership verification in the same handler
+        if has_prior_ownership_check "$file" "$line_num"; then
             continue
         fi
 
@@ -133,19 +207,29 @@ check_missing_user_filter() {
             "error" \
             "$file" \
             "$line_num" \
-            "DELETE operation may be missing user ownership check (no and() found)" \
-            "Use: .where(and(eq(table.id, id), eq(table.userId, context.user.id)))" \
+            "DELETE operation may be missing user ownership check" \
+            "Use: .where(and(eq(table.id, id), eq(table.userId, context.user.id))) OR verify ownership before the operation" \
             "$content" \
             "docs/architecture/domains/server.md#65-delete-patterns"
     done || true
 
-    # Find update operations without and() - likely missing user check
-    grep -n "\.update(" "$file" 2>/dev/null | grep -v "and(" | while IFS= read -r line; do
+    # Find update operations and check for ownership
+    grep -n "\.update(" "$file" 2>/dev/null | while IFS= read -r line; do
         local line_num=$(echo "$line" | cut -d: -f1)
         local content=$(echo "$line" | cut -d: -f2-)
 
         # Skip if it's a comment
         if echo "$content" | grep -q "^\s*//"; then
+            continue
+        fi
+
+        # Check for user ownership in context (multi-line patterns)
+        if has_user_ownership_in_context "$file" "$line_num" 5; then
+            continue
+        fi
+
+        # Check for prior ownership verification in the same handler
+        if has_prior_ownership_check "$file" "$line_num"; then
             continue
         fi
 
@@ -155,8 +239,8 @@ check_missing_user_filter() {
             "warning" \
             "$file" \
             "$line_num" \
-            "UPDATE operation may be missing user ownership check (no and() found)" \
-            "Use: .where(and(eq(table.id, id), eq(table.userId, context.user.id)))" \
+            "UPDATE operation may be missing user ownership check" \
+            "Use: .where(and(eq(table.id, id), eq(table.userId, context.user.id))) OR verify ownership before the operation" \
             "$content" \
             "docs/architecture/domains/server.md#64-update-patterns"
     done || true
@@ -205,7 +289,16 @@ check_redundant_middleware() {
 check_redundant_user_check() {
     local file="$1"
 
-    # Only check files that use protectedMiddleware
+    # Skip middleware files - they define the check, not use it redundantly
+    if [[ "$file" == *"/middleware/"* ]]; then
+        return
+    fi
+
+    # Only check action files that use protectedMiddleware
+    if [[ "$file" != *"/actions/"* ]]; then
+        return
+    fi
+
     if ! grep -q "protectedMiddleware" "$file" 2>/dev/null; then
         return
     fi
@@ -287,8 +380,20 @@ check_missing_validation() {
         local has_data=$(sed -n "${handler_line}p" "$file" | grep -c "{ context, data }\|{context, data}\|{ data,\|{data,")
 
         if [[ "$has_data" -gt 0 ]]; then
-            # Check if there's an inputValidator before this handler
-            local has_validator=$(head -n "$handler_line" "$file" | tail -n 10 | grep -c "\.inputValidator(")
+            # Find the createServerFn() that this handler belongs to
+            # Look backwards for createServerFn
+            local fn_start
+            fn_start=$(head -n "$handler_line" "$file" | grep -n "createServerFn(" | tail -1 | cut -d: -f1)
+
+            if [[ -z "$fn_start" ]]; then
+                fn_start=1
+            fi
+
+            # Check if there's an inputValidator between createServerFn and handler
+            local fn_context
+            fn_context=$(sed -n "${fn_start},${handler_line}p" "$file")
+            local has_validator
+            has_validator=$(echo "$fn_context" | grep -c "\.inputValidator(")
 
             if [[ "$has_validator" -eq 0 ]]; then
                 local content=$(echo "$line" | cut -d: -f2-)
