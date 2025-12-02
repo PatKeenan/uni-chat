@@ -164,10 +164,78 @@ export const starredModel = pgTable(
 export type DB_Starred_Model = typeof starredModel.$inferSelect;
 export type InsertDB_Starred_Model = typeof starredModel.$inferInsert;
 
+// ==================== Memories ====================
+
+/**
+ * Memory Block
+ *
+ * Represents a single block of memory content with authorship tracking.
+ */
+export interface MemoryBlock {
+  id: string;
+  source: "llm" | "user";
+  content: string;
+  createdAt: string; // ISO timestamp
+  updatedAt?: string; // ISO timestamp, only for user edits
+}
+
+/**
+ * Included Chat Reference
+ *
+ * Tracks which chats have been processed for memory generation.
+ */
+export interface IncludedChatRef {
+  chatId: string;
+  lastMessageDate: string; // ISO timestamp
+  messageCount: number;
+}
+
+/**
+ * Folder Memory
+ *
+ * Stores memory document for a folder (or uncategorized chats).
+ * One document per folder with structured blocks for authorship tracking.
+ */
+export const folderMemory = pgTable(
+  "folder_memory",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(), // No FK - user table is server-side
+    folderId: text("folder_id").references(() => folder.id, {
+      onDelete: "cascade",
+    }), // null = uncategorized
+    blocks: jsonb("blocks").$type<MemoryBlock[]>().default([]).notNull(),
+    includedChats: jsonb("included_chats")
+      .$type<IncludedChatRef[]>()
+      .default([])
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique().on(table.userId, table.folderId), // One memory per folder per user
+    index("folder_memory_user_idx").on(table.userId),
+  ]
+);
+
+export type DB_FolderMemory = typeof folderMemory.$inferSelect;
+export type InsertDB_FolderMemory = typeof folderMemory.$inferInsert;
+
 // ==================== Relations ====================
 
-export const folderRelations = relations(folder, ({ many }) => ({
+export const folderRelations = relations(folder, ({ many, one }) => ({
   chats: many(chat),
+  memory: one(folderMemory),
+}));
+
+export const folderMemoryRelations = relations(folderMemory, ({ one }) => ({
+  folder: one(folder, {
+    fields: [folderMemory.folderId],
+    references: [folder.id],
+  }),
 }));
 
 export const chatRelations = relations(chat, ({ one, many }) => ({
