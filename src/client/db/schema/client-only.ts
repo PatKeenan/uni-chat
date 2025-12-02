@@ -28,7 +28,13 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import type { CustomUIMessage, CustomUIMessageData, Model } from "@/types";
+import type {
+  CustomUIMessage,
+  CustomUIMessageData,
+  IncludedChatRef,
+  MemoryBlock,
+  Model,
+} from "@/types";
 
 // ==================== API Key (Local) ====================
 
@@ -164,10 +170,60 @@ export const starredModel = pgTable(
 export type DB_Starred_Model = typeof starredModel.$inferSelect;
 export type InsertDB_Starred_Model = typeof starredModel.$inferInsert;
 
+// ==================== Memories ====================
+
+/**
+ * Folder Memory
+ *
+ * Stores context summaries at the folder level.
+ * Each folder has at most one memory document containing blocks of context.
+ * Blocks track authorship (LLM vs user) to preserve user edits during updates.
+ *
+ * Features:
+ * - folderId null = uncategorized folder
+ * - JSONB blocks for flexible content storage with authorship
+ * - JSONB includedChats tracks which chats have been processed
+ */
+export const folderMemory = pgTable(
+  "folder_memory",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(), // No FK - user table is server-side
+    folderId: text("folder_id").references(() => folder.id, {
+      onDelete: "cascade",
+    }),
+    blocks: jsonb("blocks").$type<MemoryBlock[]>().default([]).notNull(),
+    includedChats: jsonb("included_chats")
+      .$type<IncludedChatRef[]>()
+      .default([])
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique().on(table.userId, table.folderId),
+    index("folder_memory_user_idx").on(table.userId),
+  ]
+);
+
+export type DB_FolderMemory = typeof folderMemory.$inferSelect;
+export type InsertDB_FolderMemory = typeof folderMemory.$inferInsert;
+
 // ==================== Relations ====================
 
-export const folderRelations = relations(folder, ({ many }) => ({
+export const folderRelations = relations(folder, ({ many, one }) => ({
   chats: many(chat),
+  memory: one(folderMemory),
+}));
+
+export const folderMemoryRelations = relations(folderMemory, ({ one }) => ({
+  folder: one(folder, {
+    fields: [folderMemory.folderId],
+    references: [folder.id],
+  }),
 }));
 
 export const chatRelations = relations(chat, ({ one, many }) => ({

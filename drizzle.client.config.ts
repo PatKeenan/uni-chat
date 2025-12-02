@@ -11,6 +11,6 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
 	dialect: "postgresql",
-	schema: "./src/lib/client/db/schema/client-only.ts",
+	schema: "./src/client/db/schema/client-only.ts",
 	out: "./drizzle/migrations-client",
 });
