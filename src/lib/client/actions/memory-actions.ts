@@ -9,9 +9,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getClientDb } from "@/lib/client/db";
 import {
-  folderMemory,
-  type MemoryBlock,
-  type IncludedChatRef,
+	folderMemory,
+	type IncludedChatRef,
+	type MemoryBlock,
 } from "@/lib/client/db/schema";
 
 // ==================== Read Operations ====================
@@ -24,24 +24,24 @@ import {
  * @returns Memory document or null if not found
  */
 export async function getMemoryByFolderId(
-  userId: string,
-  folderId: string | null
+	userId: string,
+	folderId: string | null,
 ): Promise<typeof folderMemory.$inferSelect | null> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const condition =
-    folderId === null
-      ? and(eq(folderMemory.userId, userId), isNull(folderMemory.folderId))
-      : and(
-          eq(folderMemory.userId, userId),
-          eq(folderMemory.folderId, folderId)
-        );
+	const condition =
+		folderId === null
+			? and(eq(folderMemory.userId, userId), isNull(folderMemory.folderId))
+			: and(
+					eq(folderMemory.userId, userId),
+					eq(folderMemory.folderId, folderId),
+				);
 
-  const result = await db.query.folderMemory.findFirst({
-    where: condition,
-  });
+	const result = await db.query.folderMemory.findFirst({
+		where: condition,
+	});
 
-  return result ?? null;
+	return result ?? null;
 }
 
 /**
@@ -51,12 +51,12 @@ export async function getMemoryByFolderId(
  * @returns Array of memory documents
  */
 export async function getAllMemories(
-  userId: string
+	userId: string,
 ): Promise<Array<typeof folderMemory.$inferSelect>> {
-  const db = await getClientDb();
-  return db.query.folderMemory.findMany({
-    where: eq(folderMemory.userId, userId),
-  });
+	const db = await getClientDb();
+	return db.query.folderMemory.findMany({
+		where: eq(folderMemory.userId, userId),
+	});
 }
 
 // ==================== Write Operations ====================
@@ -68,28 +68,25 @@ export async function getAllMemories(
  * @returns Created memory document
  */
 export async function createMemory(data: {
-  userId: string;
-  folderId: string | null;
-  blocks?: MemoryBlock[];
-  includedChats?: IncludedChatRef[];
+	userId: string;
+	folderId: string | null;
+	blocks?: MemoryBlock[];
+	includedChats?: IncludedChatRef[];
 }): Promise<typeof folderMemory.$inferSelect> {
-  const db = await getClientDb();
+	const db = await getClientDb();
 
-  const newMemory = {
-    id: nanoid(),
-    userId: data.userId,
-    folderId: data.folderId,
-    blocks: data.blocks ?? [],
-    includedChats: data.includedChats ?? [],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+	const newMemory = {
+		id: nanoid(),
+		userId: data.userId,
+		folderId: data.folderId,
+		blocks: data.blocks ?? [],
+		includedChats: data.includedChats ?? [],
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
 
-  const [created] = await db
-    .insert(folderMemory)
-    .values(newMemory)
-    .returning();
-  return created;
+	const [created] = await db.insert(folderMemory).values(newMemory).returning();
+	return created;
 }
 
 /**
@@ -100,17 +97,15 @@ export async function createMemory(data: {
  * @param blocks - New blocks array
  */
 export async function updateMemoryBlocks(
-  memoryId: string,
-  userId: string,
-  blocks: MemoryBlock[]
+	memoryId: string,
+	userId: string,
+	blocks: MemoryBlock[],
 ): Promise<void> {
-  const db = await getClientDb();
-  await db
-    .update(folderMemory)
-    .set({ blocks, updatedAt: new Date() })
-    .where(
-      and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId))
-    );
+	const db = await getClientDb();
+	await db
+		.update(folderMemory)
+		.set({ blocks, updatedAt: new Date() })
+		.where(and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId)));
 }
 
 /**
@@ -121,22 +116,19 @@ export async function updateMemoryBlocks(
  * @param block - Block to add
  */
 export async function addMemoryBlock(
-  memoryId: string,
-  userId: string,
-  block: MemoryBlock
+	memoryId: string,
+	userId: string,
+	block: MemoryBlock,
 ): Promise<void> {
-  const db = await getClientDb();
-  const existing = await db.query.folderMemory.findFirst({
-    where: and(
-      eq(folderMemory.id, memoryId),
-      eq(folderMemory.userId, userId)
-    ),
-  });
+	const db = await getClientDb();
+	const existing = await db.query.folderMemory.findFirst({
+		where: and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId)),
+	});
 
-  if (!existing) return;
+	if (!existing) return;
 
-  const updatedBlocks = [...existing.blocks, block];
-  await updateMemoryBlocks(memoryId, userId, updatedBlocks);
+	const updatedBlocks = [...existing.blocks, block];
+	await updateMemoryBlocks(memoryId, userId, updatedBlocks);
 }
 
 /**
@@ -147,17 +139,15 @@ export async function addMemoryBlock(
  * @param includedChats - New included chats array
  */
 export async function updateIncludedChats(
-  memoryId: string,
-  userId: string,
-  includedChats: IncludedChatRef[]
+	memoryId: string,
+	userId: string,
+	includedChats: IncludedChatRef[],
 ): Promise<void> {
-  const db = await getClientDb();
-  await db
-    .update(folderMemory)
-    .set({ includedChats, updatedAt: new Date() })
-    .where(
-      and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId))
-    );
+	const db = await getClientDb();
+	await db
+		.update(folderMemory)
+		.set({ includedChats, updatedAt: new Date() })
+		.where(and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId)));
 }
 
 /**
@@ -167,15 +157,13 @@ export async function updateIncludedChats(
  * @param userId - User ID (for security check)
  */
 export async function deleteMemory(
-  memoryId: string,
-  userId: string
+	memoryId: string,
+	userId: string,
 ): Promise<void> {
-  const db = await getClientDb();
-  await db
-    .delete(folderMemory)
-    .where(
-      and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId))
-    );
+	const db = await getClientDb();
+	await db
+		.delete(folderMemory)
+		.where(and(eq(folderMemory.id, memoryId), eq(folderMemory.userId, userId)));
 }
 
 // ==================== Utility Operations ====================
@@ -188,12 +176,12 @@ export async function deleteMemory(
  * @returns Existing or newly created memory document
  */
 export async function getOrCreateMemory(
-  userId: string,
-  folderId: string | null
+	userId: string,
+	folderId: string | null,
 ): Promise<typeof folderMemory.$inferSelect> {
-  const existing = await getMemoryByFolderId(userId, folderId);
-  if (existing) return existing;
-  return createMemory({ userId, folderId });
+	const existing = await getMemoryByFolderId(userId, folderId);
+	if (existing) return existing;
+	return createMemory({ userId, folderId });
 }
 
 /**
@@ -205,19 +193,19 @@ export async function getOrCreateMemory(
  * @returns true if there are unprocessed conversations
  */
 export async function hasNewConversations(
-  userId: string,
-  folderId: string | null,
-  chats: Array<{ id: string; updatedAt: Date }>
+	userId: string,
+	folderId: string | null,
+	chats: Array<{ id: string; updatedAt: Date }>,
 ): Promise<boolean> {
-  const memory = await getMemoryByFolderId(userId, folderId);
-  if (!memory) return chats.length > 0;
+	const memory = await getMemoryByFolderId(userId, folderId);
+	if (!memory) return chats.length > 0;
 
-  const includedChatIds = new Set(memory.includedChats.map((c) => c.chatId));
+	const includedChatIds = new Set(memory.includedChats.map((c) => c.chatId));
 
-  return chats.some((chat) => {
-    if (!includedChatIds.has(chat.id)) return true;
-    const included = memory.includedChats.find((c) => c.chatId === chat.id);
-    if (!included) return true;
-    return new Date(chat.updatedAt) > new Date(included.lastMessageDate);
-  });
+	return chats.some((chat) => {
+		if (!includedChatIds.has(chat.id)) return true;
+		const included = memory.includedChats.find((c) => c.chatId === chat.id);
+		if (!included) return true;
+		return new Date(chat.updatedAt) > new Date(included.lastMessageDate);
+	});
 }

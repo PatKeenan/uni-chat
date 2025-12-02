@@ -19,6 +19,7 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settin
 import { Route as DashboardNewRouteImport } from './routes/dashboard/new'
 import { Route as DashboardModelsRouteImport } from './routes/dashboard/models'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as DashboardFolderFolderIdRouteImport } from './routes/dashboard/folder.$folderId'
 import { Route as DashboardCChatIdRouteImport } from './routes/dashboard/c.$chatId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -72,6 +73,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardFolderFolderIdRoute = DashboardFolderFolderIdRouteImport.update({
+  id: '/folder/$folderId',
+  path: '/folder/$folderId',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardCChatIdRoute = DashboardCChatIdRouteImport.update({
   id: '/c/$chatId',
   path: '/c/$chatId',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/c/$chatId': typeof DashboardCChatIdRoute
+  '/dashboard/folder/$folderId': typeof DashboardFolderFolderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/c/$chatId': typeof DashboardCChatIdRoute
+  '/dashboard/folder/$folderId': typeof DashboardFolderFolderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/c/$chatId': typeof DashboardCChatIdRoute
+  '/dashboard/folder/$folderId': typeof DashboardFolderFolderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/api/auth/$'
     | '/dashboard/c/$chatId'
+    | '/dashboard/folder/$folderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/$'
     | '/dashboard/c/$chatId'
+    | '/dashboard/folder/$folderId'
   id:
     | '__root__'
     | '/'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/api/auth/$'
     | '/dashboard/c/$chatId'
+    | '/dashboard/folder/$folderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -251,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/folder/$folderId': {
+      id: '/dashboard/folder/$folderId'
+      path: '/folder/$folderId'
+      fullPath: '/dashboard/folder/$folderId'
+      preLoaderRoute: typeof DashboardFolderFolderIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/c/$chatId': {
       id: '/dashboard/c/$chatId'
       path: '/c/$chatId'
@@ -274,6 +293,7 @@ interface DashboardRouteChildren {
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardCChatIdRoute: typeof DashboardCChatIdRoute
+  DashboardFolderFolderIdRoute: typeof DashboardFolderFolderIdRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -282,6 +302,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardCChatIdRoute: DashboardCChatIdRoute,
+  DashboardFolderFolderIdRoute: DashboardFolderFolderIdRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
