@@ -5,9 +5,9 @@ import { updateLocalChatTitle } from "@/client/actions/chat-actions";
 import { saveLocalMessages } from "@/client/actions/message-actions";
 import { useSession } from "@/client/auth";
 import { getApiKey, getTavilyApiKey } from "@/client/storage/api-key";
-import type { Model } from "@/types/models";
+import type { Model } from "@/types";
 import { generateChatTitle } from "@/client/utils/generate-chat-title";
-import type { CustomUIMessage, DB_Message } from "@/types/models";
+import type { CustomUIMessage, DB_Message } from "@/types";
 import { toUiMessages } from "@/client/utils/to-ui-message";
 
 export interface UseChatStreamProps {

@@ -29,7 +29,7 @@ import {
   useCreateLocalFolder,
   useLocalFolders,
 } from "@/client/hooks/use-local-folders";
-import type { DB_Chat, DB_Message } from "@/types/models";
+import type { DB_Chat, DB_Message } from "@/types";
 
 type ChatViewContentProps = {
   chat: DB_Chat;

@@ -14,7 +14,7 @@ import {
   getUIMessages,
   saveLocalMessages,
 } from "@/client/actions/message-actions";
-import type { CustomUIMessage } from "@/types/models";
+import type { CustomUIMessage } from "@/types";
 import { chatKeys } from "./use-local-chats";
 
 /**

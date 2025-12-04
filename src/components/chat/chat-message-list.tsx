@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useChatStore } from "@/client/stores/chat-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { CustomUIMessage } from "@/types/models";
+import type { CustomUIMessage } from "@/types";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessage } from "./chat-message";
 

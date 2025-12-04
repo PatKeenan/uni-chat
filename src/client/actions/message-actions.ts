@@ -15,7 +15,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getClientDb } from "@/client/db";
 import { message } from "@/client/db/schema";
-import type { CustomUIMessage, DB_Message } from "@/types/models";
+import type { CustomUIMessage, DB_Message } from "@/types";
 
 // ==================== Schemas ====================
 

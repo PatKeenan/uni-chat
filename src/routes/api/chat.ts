@@ -7,7 +7,7 @@ import {
 } from "ai";
 import type { ModelCapabilities } from "@/client/stores/chat-store";
 import type { DB_Message } from "@/client/db/schema";
-import type { Model } from "@/types/models";
+import type { Model } from "@/types";
 import { toUiMessages } from "@/client/utils/to-ui-message";
 import { createOpenRouterClient } from "@/integrations/openrouter/client";
 import { initWebSearchTool } from "@/integrations/tavily/web-search";
