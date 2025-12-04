@@ -1,290 +1,130 @@
-Welcome to your new TanStack app! 
+# Uni-Chat
 
-# Getting Started
+A local-first, multi-model AI chat application built for local-first, privacy-focused users. Bring your own API keys, keep your data local, and access all the latest AI models through a single interface.
 
-To run this application:
+## Philosophy
 
-```bash
-pnpm install
-pnpm start
-```
+Uni-Chat is built on two core principles:
 
-# Building For Production
+1. **Privacy-First**: Your conversations, API keys, and data stay on your device. No tracking, no ads, no data harvesting. This is a return to the classic local-first web philosophy.
 
-To build this application for production:
+2. **One Subscription, All Models**: Through OpenRouter integration, you get access to chat models, image generation, video models, and more - all from one place with one subscription.
 
-```bash
-pnpm build
-```
+## Features
 
-## Testing
+- **Local-First Architecture**: All chat data stored locally via PGlite (PostgreSQL in the browser)
+- **Multi-Model Support**: Access any model available through OpenRouter
+- **Multi-Modal**: Support for text, images, and more as models evolve
+- **BYOK (Bring Your Own Key)**: Use your own OpenRouter API key and optional Tavily key for web search
+- **Full Data Control**: Export, import, or delete all your data through settings
+- **Web Search**: Optional Tavily integration for grounding responses in current information
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## Tech Stack
 
-```bash
-pnpm test
-```
+- **Runtime**: Bun
+- **Framework**: TanStack Start (React Server Framework)
+- **Deployment**: Cloudflare Workers
+- **Server Database**: PostgreSQL with Drizzle ORM
+- **Client Database**: PGlite (local-first)
+- **Auth**: Better Auth
+- **LLM Provider**: OpenRouter
+- **UI**: Tailwind CSS + shadcn/ui
+- **Testing**: Vitest
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
-
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
+## Getting Started
 
 ```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
+# Install dependencies
+bun install
+
+# Start development server
+bun dev
+
+# Run tests
+bun test
+
+# Type check
+bun typecheck
+
+# Lint
+bun lint
 ```
 
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
+## Project Structure
 
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+The codebase is organized into 7 distinct domains:
 
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
+```
+src/
+├── routes/         # Page routes, API endpoints, layouts
+├── server/         # Server-side code (actions, middleware, db, auth)
+├── client/         # Client-side code (hooks, stores, PGlite db)
+├── components/     # React UI components (ui/, chat/, nav/, shared/)
+├── integrations/   # Third-party API clients (OpenRouter, Tavily)
+├── types/          # Shared TypeScript definitions
+└── test/           # Test infrastructure
 ```
 
-You can also add TanStack Query Devtools to the root route (optional).
+See [docs/architecture/DOMAIN-ARCHITECTURE.md](docs/architecture/DOMAIN-ARCHITECTURE.md) for detailed domain specifications.
 
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+## Claude Code Experiment
 
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
+This project doubles as an experiment in AI-assisted development, specifically focused on **code review quality over implementation speed**.
 
-Now you can use `useQuery` to fetch your data.
+### The Problem
 
-```tsx
-import { useQuery } from "@tanstack/react-query";
+AI coding assistants are great at generating code, but often produce "code slop" - technically working code that doesn't follow project patterns, introduces inconsistencies, or slowly degrades codebase quality over time.
 
-import "./App.css";
+### The Approach
 
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
+Instead of focusing on AI implementation or planning, this project emphasizes **validation and review**:
 
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+- **Domain Expert Skills**: Specialized Claude Code skills for each domain (server, client, components, routes, integrations, types) that understand the specific patterns and rules for that area
+- **Automated Validation**: Scripts that detect domain violations before they enter the codebase
+- **`/review` Command**: A comprehensive PR review system that acts as a specialized senior developer:
+  - Identifies which domains are affected by changes
+  - Runs validation scripts to detect pattern violations
+  - References domain-specific best practices
+  - Generates detailed, actionable feedback with exact file:line references
+  - Tracks failures over time to improve the review process
 
-export default App;
-```
+### The Goal
 
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
+Create a feedback loop where AI-assisted development gets better over time by:
 
-## State Management
+1. Catching violations early in PR review
+2. Tracking what violations slip through
+3. Using that data to improve both the review skills and implementation guidance
 
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
+This is an attempt to make AI-assisted development **scalable** - maintaining code quality as the codebase grows rather than accumulating technical debt.
 
-First you need to add TanStack Store as a dependency:
+## Roadmap
+
+- [ ] **Folder Memories**: Per-folder context that users can manually adjust or reference in chat
+- [ ] **Custom Agents**: Create specialized agents through the UI (personas,models, system prompts, tool access, orchestration, evaluation)
+- [ ] **Device Sync via WebRTC**: Peer-to-peer sync between devices using QR code pairing (scan on mobile to sync with desktop) - no server involved, your data never leaves your devices
+- [ ] **On-Device Models**: Run local models (WebLLM/WebGPU) for fully offline conversations - no API key required
+- [ ] **P2P Group Chat** (experimental): WebRTC-based group conversations with a shared AI assistant - each participant uses their own API key, no server mediating the chat
+- [ ] **Enhanced Export**: More export formats and selective data export
+- [ ] **Offline Mode**: Full functionality without network connection
+
+## Development Commands
 
 ```bash
-pnpm add @tanstack/store
+# Development
+bun dev              # Start dev server (port 3000)
+bun build            # Production build
+bun deploy           # Deploy to Cloudflare Workers
+
+# Quality
+bun test             # Run tests
+bun typecheck        # TypeScript checking
+bun lint             # Biome linting
+bun lint:fix         # Auto-fix lint issues
+bun format           # Format code
+
+# Database
+bun db:generate      # Generate migrations from schema
+bun db:migrate       # Apply migrations
+bun db:studio        # Open Drizzle Studio
 ```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
