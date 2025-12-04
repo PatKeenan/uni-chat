@@ -1,18 +1,6 @@
+import { useMemo } from "react";
 import { create } from "zustand";
-import type { Model, ModelName } from "@/types";
-
-/**
- * Model capabilities derived from OpenRouter model metadata
- * These are extracted from the full Model for easy access
- */
-export interface ModelCapabilities {
-  supportsToolCalls: boolean;
-  supportsImageOutput: boolean;
-  supportsTextOutput: boolean;
-  supportsEmbeddings: boolean;
-  inputModalities: Array<"text" | "image" | "file" | "audio" | "video">;
-  outputModalities: Array<"text" | "image" | "embeddings">;
-}
+import type { Model, ModelCapabilities, ModelName } from "@/types";
 
 /**
  * Extract capabilities from OpenRouter model metadata
@@ -56,7 +44,6 @@ interface ChatStoreState {
   input: string;
   model?: ModelName;
   modelMetadata: Model | null;
-  capabilities: ModelCapabilities;
   isLoadingInitialMessages: boolean;
 }
 
@@ -66,27 +53,27 @@ interface ChatStoreActions {
   setIsLoadingInitialMessages: (isLoadingInitialMessages: boolean) => void;
 }
 
-const defaultCapabilities: ModelCapabilities = {
-  supportsToolCalls: false,
-  supportsImageOutput: false,
-  supportsTextOutput: true,
-  supportsEmbeddings: false,
-  inputModalities: ["text"],
-  outputModalities: ["text"],
-};
-
 export const useChatStore = create<ChatStoreState & ChatStoreActions>(
   (set) => ({
     input: "",
     isLoadingInitialMessages: true,
     modelMetadata: null,
-    capabilities: defaultCapabilities,
     setInput: (input) => set({ input }),
-    setModel: (model, metadata = null) => {
-      const capabilities = extractModelCapabilities(metadata);
-      return set({ model, modelMetadata: metadata, capabilities });
-    },
+    setModel: (model, metadata = null) => set({ model, modelMetadata: metadata }),
     setIsLoadingInitialMessages: (isLoadingInitialMessages) =>
       set({ isLoadingInitialMessages }),
   })
 );
+
+/**
+ * Hook to get model capabilities derived from store's modelMetadata.
+ * Computes capabilities on-demand rather than storing derived state.
+ * Uses useMemo to prevent infinite re-renders from new object references.
+ */
+export function useModelCapabilities(): ModelCapabilities {
+  const modelMetadata = useChatStore((state) => state.modelMetadata);
+  return useMemo(
+    () => extractModelCapabilities(modelMetadata),
+    [modelMetadata]
+  );
+}

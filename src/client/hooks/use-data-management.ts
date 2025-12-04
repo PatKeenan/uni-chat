@@ -16,13 +16,16 @@ import {
   type DataStats,
   getDataStats,
 } from "@/client/actions/data-actions";
+import { chatKeys } from "./use-local-chats";
+import { folderKeys } from "./use-local-folders";
+import { modelKeys } from "./use-models";
 
 // ==================== Query Keys ====================
 
 export const dataManagementKeys = {
-  all: ["data-management"] as const,
+  all: (userId: string) => ["data-management", userId] as const,
   stats: (userId: string) =>
-    [...dataManagementKeys.all, "stats", userId] as const,
+    [...dataManagementKeys.all(userId), "stats"] as const,
 };
 
 // ==================== Hooks ====================
@@ -61,9 +64,9 @@ export function useClearAttachments() {
         queryClient.invalidateQueries({
           queryKey: dataManagementKeys.stats(userId),
         });
-        // Invalidate message-related queries
+        // Invalidate all message queries (messages are keyed by chatId, so invalidate prefix)
         queryClient.invalidateQueries({
-          queryKey: ["messages"],
+          queryKey: ["local-messages"],
         });
       }
     },
@@ -86,11 +89,13 @@ export function useClearAllMessages() {
         queryClient.invalidateQueries({
           queryKey: dataManagementKeys.stats(userId),
         });
+        // Invalidate all message queries (messages are keyed by chatId)
         queryClient.invalidateQueries({
-          queryKey: ["messages"],
+          queryKey: ["local-messages"],
         });
+        // Invalidate user's chat queries to refresh chat metadata
         queryClient.invalidateQueries({
-          queryKey: ["chats"],
+          queryKey: chatKeys.all(userId),
         });
       }
     },
@@ -113,14 +118,17 @@ export function useClearAllChats() {
         queryClient.invalidateQueries({
           queryKey: dataManagementKeys.stats(userId),
         });
+        // Invalidate all message queries
         queryClient.invalidateQueries({
-          queryKey: ["messages"],
+          queryKey: ["local-messages"],
         });
+        // Invalidate user's chat queries
         queryClient.invalidateQueries({
-          queryKey: ["chats"],
+          queryKey: chatKeys.all(userId),
         });
+        // Invalidate user's folder queries (folder chat counts changed)
         queryClient.invalidateQueries({
-          queryKey: ["folders"],
+          queryKey: folderKeys.all(userId),
         });
       }
     },
@@ -137,23 +145,27 @@ export function useClearAllUserData() {
 
   return useMutation<ClearDataResult, Error, string>({
     mutationFn: (userId: string) => clearAllUserData(userId),
-    onSuccess: (result) => {
+    onSuccess: (result, userId) => {
       if (result.success) {
-        // Invalidate everything
+        // Invalidate everything for this user
         queryClient.invalidateQueries({
-          queryKey: dataManagementKeys.all,
+          queryKey: dataManagementKeys.all(userId),
         });
+        // Invalidate all message queries
         queryClient.invalidateQueries({
-          queryKey: ["messages"],
+          queryKey: ["local-messages"],
         });
+        // Invalidate user's chat queries
         queryClient.invalidateQueries({
-          queryKey: ["chats"],
+          queryKey: chatKeys.all(userId),
         });
+        // Invalidate user's folder queries
         queryClient.invalidateQueries({
-          queryKey: ["folders"],
+          queryKey: folderKeys.all(userId),
         });
+        // Invalidate user's starred models
         queryClient.invalidateQueries({
-          queryKey: ["starred-models"],
+          queryKey: modelKeys.starred(userId),
         });
       }
     },

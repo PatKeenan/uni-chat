@@ -16,6 +16,19 @@ type UserId = User["id"];
 type Models = Awaited<ReturnType<typeof getOpenRouterModels>>["data"];
 type Model = Models[number];
 type ModelName = Model["canonicalSlug"];
+
+/**
+ * Model capabilities derived from OpenRouter model metadata.
+ * Used across client hooks, components, and API routes.
+ */
+interface ModelCapabilities {
+  supportsToolCalls: boolean;
+  supportsImageOutput: boolean;
+  supportsTextOutput: boolean;
+  supportsEmbeddings: boolean;
+  inputModalities: Array<"text" | "image" | "file" | "audio" | "video">;
+  outputModalities: Array<"text" | "image" | "embeddings">;
+}
 type ChatMessageParts = UIDataTypes;
 type CustomUIMessageData = {
   modelName?: ModelName;
@@ -35,6 +48,7 @@ export type {
   Models,
   Model,
   ModelName,
+  ModelCapabilities,
   // Messages
   CustomUIMessage,
   CustomUIMessageData,

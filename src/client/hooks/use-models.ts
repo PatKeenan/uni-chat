@@ -13,18 +13,38 @@ import {
 } from "@/client/actions/model-actions";
 import { getApiKey } from "@/client/storage/api-key";
 import { getOpenRouterModels } from "@/server/actions/model-actions";
+
+/**
+ * Query keys for model operations
+ * Note: openrouter-models is global (not user-specific) since the model catalog
+ * is the same for all users. User-specific starred models include userId.
+ */
+export const modelKeys = {
+  // Global model list (same for all users)
+  openrouter: () => ["openrouter-models"] as const,
+  // User-specific starred models
+  starred: (userId: string) => ["starred-models", userId] as const,
+  isStarred: (userId: string, modelId: string) =>
+    ["is-model-starred", userId, modelId] as const,
+};
+
 /**
  * Hook to fetch all available OpenRouter models
+ * Note: This fetches the global OpenRouter model catalog, not user-specific data.
+ * The API key is used for authentication but returns the same models for all users.
  */
 export function useOpenRouterModels() {
+  const apiKey = getApiKey();
+
   return useQuery({
-    queryKey: ["openrouter-models"],
+    queryKey: modelKeys.openrouter(),
     queryFn: async () => {
       const result = await getOpenRouterModels({
-        data: { localApiKey: getApiKey() || "" },
+        data: { localApiKey: apiKey || "" },
       });
       return result;
     },
+    enabled: !!apiKey,
     staleTime: 1000 * 60 * 60, // 1 hour - models don't change often
   });
 }
@@ -34,11 +54,12 @@ export function useOpenRouterModels() {
  */
 export function useStarredModels(userId: string) {
   return useQuery({
-    queryKey: ["starred-models"],
+    queryKey: modelKeys.starred(userId),
     queryFn: async () => {
-      const result = await getStarredModels({ userId: userId });
+      const result = await getStarredModels({ userId });
       return result;
     },
+    enabled: !!userId,
   });
 }
 
@@ -47,7 +68,7 @@ export function useStarredModels(userId: string) {
  */
 export function useIsModelStarred(modelId: string, userId: string) {
   return useSuspenseQuery({
-    queryKey: ["is-model-starred", modelId],
+    queryKey: modelKeys.isStarred(userId, modelId),
     queryFn: async () => {
       const result = await isModelStarred({ userId, modelId });
       return result;
@@ -67,8 +88,7 @@ export function useToggleModelStar(userId: string) {
       return await starModel({ ...modelData, userId });
     },
     onSuccess: () => {
-      console.log("Invalidating starred models");
-      queryClient.invalidateQueries({ queryKey: ["starred-models"] });
+      queryClient.invalidateQueries({ queryKey: modelKeys.starred(userId) });
     },
   });
 
@@ -77,7 +97,7 @@ export function useToggleModelStar(userId: string) {
       await unstarModel({ userId, modelId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["starred-models"] });
+      queryClient.invalidateQueries({ queryKey: modelKeys.starred(userId) });
     },
   });
 

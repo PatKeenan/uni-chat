@@ -35,7 +35,7 @@ The Client domain contains all browser-only code including:
 
 ### Key Principles
 
-1. **No server imports** - Never import from `@/server/*`
+1. **Server function imports OK** - Can import `createServerFn` functions from `@/server/actions/*` (TanStack Start handles RPC automatically). Never import server internals (db, config, middleware, utils).
 2. **SSR safety** - Always guard browser APIs with `typeof window` checks
 3. **User isolation** - All queries must filter by `userId`
 4. **Type safety** - Use Drizzle's `$inferSelect` for return types
@@ -1112,7 +1112,7 @@ Use this checklist to validate Client domain code changes:
 - [ ] Storage keys are namespaced and descriptive
 
 ### General
-- [ ] No imports from `@/server/*`
+- [ ] No imports from `@/server/*` (except `@/server/actions/*` which is allowed for TanStack Start server functions)
 - [ ] Named exports only (no default exports)
 - [ ] Proper import order
 

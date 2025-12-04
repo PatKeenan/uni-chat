@@ -1,6 +1,9 @@
 import { useChat } from "@ai-sdk/react";
 import { useRef } from "react";
-import { useChatStore } from "@/client/stores/chat-store";
+import {
+  useChatStore,
+  useModelCapabilities,
+} from "@/client/stores/chat-store";
 import { updateLocalChatTitle } from "@/client/actions/chat-actions";
 import { saveLocalMessages } from "@/client/actions/message-actions";
 import { useSession } from "@/client/auth";
@@ -39,9 +42,9 @@ export function useChatStream({
   // const [input, setInput] = useState("");
 
   const currentModel = useChatStore((state) => state.model);
-  const capabilities = useChatStore((state) => state.capabilities);
   const modelMetadata = useChatStore((state) => state.modelMetadata);
   const setModel = useChatStore((state) => state.setModel);
+  const capabilities = useModelCapabilities();
 
   // Track if we've generated a title for this chat
   const hasGeneratedTitle = useRef(false);

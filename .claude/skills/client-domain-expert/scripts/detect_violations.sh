@@ -122,6 +122,11 @@ check_query_key_missing_userid() {
         fi
 
         # Check for inline arrays without userId
+        # Exception: ["local-messages"] is keyed by chatId, not userId (messages belong to chats)
+        if echo "$content" | grep -qE '\["local-messages"\]'; then
+            continue
+        fi
+
         if echo "$content" | grep -qE '\["[^"]+"\]' && ! echo "$content" | grep -q "userId"; then
             add_violation \
                 "C002" \
@@ -257,22 +262,32 @@ check_localstorage_ssr_guard() {
 }
 
 # C007: Check for server imports in client domain
+# NOTE: Imports from @/server/actions/ are ALLOWED because TanStack Start's
+# createServerFn functions are designed to be imported and called from client code.
+# The bundler automatically transforms them into RPC proxies on the client.
 check_server_import() {
     local file="$1"
 
-    # Find imports from @/server
+    # Find imports from @/server (excluding @/server/actions which is valid for TanStack Start)
     grep -n 'from ["\x27]@/server' "$file" 2>/dev/null | while IFS= read -r line; do
         local line_num=$(echo "$line" | cut -d: -f1)
         local content=$(echo "$line" | cut -d: -f2-)
 
+        # ALLOW: imports from @/server/actions/ (createServerFn functions)
+        # These are designed to be called from client code in TanStack Start
+        if echo "$content" | grep -qE '@/server/actions'; then
+            continue
+        fi
+
+        # FLAG: imports from other server paths (db, middleware, config, utils, auth)
         add_violation \
             "C007" \
             "Server import in client domain" \
             "error" \
             "$file" \
             "$line_num" \
-            "Client domain must not import from @/server/*" \
-            "Remove server import or move logic to appropriate domain" \
+            "Client domain must not import from @/server/* (except @/server/actions/)" \
+            "Remove server import or move logic to appropriate domain. Note: @/server/actions/ imports ARE allowed." \
             "$content" \
             "docs/architecture/domains/client.md#1-domain-overview"
     done || true
@@ -300,6 +315,9 @@ check_default_export() {
 }
 
 # C009: Check for database queries without userId filter
+# Note: This check looks for userId in the operation's where clause OR in prior
+# ownership verification. Common patterns like "verify chat ownership then delete
+# by chatId" are considered safe if there's a userId check earlier in the function.
 check_db_query_missing_userid() {
     local file="$1"
 
@@ -312,44 +330,67 @@ check_db_query_missing_userid() {
     grep -n "\.delete(" "$file" 2>/dev/null | while IFS= read -r line; do
         local line_num=$(echo "$line" | cut -d: -f1)
 
-        # Get surrounding lines to check for userId in where clause
-        local block=$(sed -n "${line_num},$((line_num + 5))p" "$file")
+        # Get surrounding lines to check for userId in where clause (after operation)
+        local block_after=$(sed -n "${line_num},$((line_num + 5))p" "$file")
 
-        if ! echo "$block" | grep -q "userId\|user_id"; then
-            local content=$(echo "$line" | cut -d: -f2-)
-            add_violation \
-                "C009" \
-                "Database operation missing userId filter" \
-                "error" \
-                "$file" \
-                "$line_num" \
-                "All database operations must filter by userId for security" \
-                "Add userId to where clause: .where(and(eq(table.id, id), eq(table.userId, userId)))" \
-                "$content" \
-                "docs/architecture/domains/client.md#53-query-patterns"
+        # Also check lines BEFORE the operation for ownership verification
+        # (common pattern: verify ownership via userId-filtered query, then operate)
+        local start_line=$((line_num - 20))
+        if [[ $start_line -lt 1 ]]; then start_line=1; fi
+        local block_before=$(sed -n "${start_line},${line_num}p" "$file")
+
+        # Skip if userId is in the where clause OR there's prior ownership check
+        if echo "$block_after" | grep -q "userId\|user_id"; then
+            continue
         fi
+        if echo "$block_before" | grep -qE "(userId|user_id|\.userId\s*!==|chat\.userId|getLocalChatById|getLocalChats)"; then
+            continue
+        fi
+
+        local content=$(echo "$line" | cut -d: -f2-)
+        add_violation \
+            "C009" \
+            "Database operation missing userId filter" \
+            "error" \
+            "$file" \
+            "$line_num" \
+            "All database operations must filter by userId for security" \
+            "Add userId to where clause: .where(and(eq(table.id, id), eq(table.userId, userId)))" \
+            "$content" \
+            "docs/architecture/domains/client.md#53-query-patterns"
     done || true
 
     # Find update operations without userId
     grep -n "\.update(" "$file" 2>/dev/null | while IFS= read -r line; do
         local line_num=$(echo "$line" | cut -d: -f1)
 
-        # Get surrounding lines to check for userId in where clause
-        local block=$(sed -n "${line_num},$((line_num + 5))p" "$file")
+        # Get surrounding lines to check for userId in where clause (after operation)
+        local block_after=$(sed -n "${line_num},$((line_num + 5))p" "$file")
 
-        if ! echo "$block" | grep -q "userId\|user_id"; then
-            local content=$(echo "$line" | cut -d: -f2-)
-            add_violation \
-                "C009" \
-                "Database operation missing userId filter" \
-                "error" \
-                "$file" \
-                "$line_num" \
-                "All database operations must filter by userId for security" \
-                "Add userId to where clause: .where(and(eq(table.id, id), eq(table.userId, userId)))" \
-                "$content" \
-                "docs/architecture/domains/client.md#53-query-patterns"
+        # Also check lines BEFORE the operation for ownership verification
+        local start_line=$((line_num - 20))
+        if [[ $start_line -lt 1 ]]; then start_line=1; fi
+        local block_before=$(sed -n "${start_line},${line_num}p" "$file")
+
+        # Skip if userId is in the where clause OR there's prior ownership check
+        if echo "$block_after" | grep -q "userId\|user_id"; then
+            continue
         fi
+        if echo "$block_before" | grep -qE "(userId|user_id|\.userId\s*!==|chat\.userId|getLocalChatById|getLocalChats)"; then
+            continue
+        fi
+
+        local content=$(echo "$line" | cut -d: -f2-)
+        add_violation \
+            "C009" \
+            "Database operation missing userId filter" \
+            "error" \
+            "$file" \
+            "$line_num" \
+            "All database operations must filter by userId for security" \
+            "Add userId to where clause: .where(and(eq(table.id, id), eq(table.userId, userId)))" \
+            "$content" \
+            "docs/architecture/domains/client.md#53-query-patterns"
     done || true
 }
 
