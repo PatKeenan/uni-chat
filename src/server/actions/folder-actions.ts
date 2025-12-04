@@ -129,18 +129,19 @@ export const reorderFolders = createServerFn()
 	.handler(async ({ context, data }) => {
 		const { db } = context.config;
 
-		// Update the order of each folder
-		for (let i = 0; i < data.folderIds.length; i++) {
-			await db
-				.update(folder)
-				.set({ order: i })
-				.where(
-					and(
-						eq(folder.id, data.folderIds[i]),
-						eq(folder.userId, context.user.id),
-					),
-				);
-		}
+		// Update all folder orders in a single transaction with parallel execution
+		await db.transaction(async (tx) => {
+			await Promise.all(
+				data.folderIds.map((folderId, index) =>
+					tx
+						.update(folder)
+						.set({ order: index })
+						.where(
+							and(eq(folder.id, folderId), eq(folder.userId, context.user.id)),
+						),
+				),
+			);
+		});
 
 		return { success: true };
 	});

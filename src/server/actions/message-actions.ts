@@ -53,43 +53,65 @@ export const saveMessages = createServerFn()
 
 		const existingIds = new Set(existingMessages.map((m) => m.id));
 
-		// Wrap all inserts in a transaction for data integrity
-		await db.transaction(async (tx) => {
-			for (let i = 0; i < data.messages.length; i++) {
-				const msg = data.messages[i];
-				const messageId = msg.id || nanoid();
+		// Collect all new messages and parts for batch insert
+		const newMessages: Array<{
+			id: string;
+			chatId: string;
+			role: string;
+			order: number;
+		}> = [];
 
-				// Skip if message already exists
-				if (existingIds.has(messageId)) {
-					continue;
-				}
+		const newParts: Array<{
+			id: string;
+			messageId: string;
+			type: string;
+			order: number;
+			textContent: string;
+		}> = [];
 
-				// Insert new message row
-				await tx.insert(message).values({
-					id: messageId,
-					chatId: data.chatId,
-					role: msg.role,
-					order: i,
-				});
+		for (let i = 0; i < data.messages.length; i++) {
+			const msg = data.messages[i];
+			const messageId = msg.id || nanoid();
 
-				// Insert message parts for new message
-				if (msg.parts && Array.isArray(msg.parts)) {
-					for (let j = 0; j < msg.parts.length; j++) {
-						const part = msg.parts[j];
+			// Skip if message already exists
+			if (existingIds.has(messageId)) {
+				continue;
+			}
 
-						// For now, we only handle text parts
-						// Tool calls can be added later when needed
-						if (part.type === "text" && "text" in part) {
-							await tx.insert(messagePart).values({
-								id: nanoid(),
-								messageId,
-								type: part.type,
-								order: j,
-								textContent: part.text as string,
-							});
-						}
+			newMessages.push({
+				id: messageId,
+				chatId: data.chatId,
+				role: msg.role,
+				order: i,
+			});
+
+			// Collect message parts for new message
+			if (msg.parts && Array.isArray(msg.parts)) {
+				for (let j = 0; j < msg.parts.length; j++) {
+					const part = msg.parts[j];
+
+					// For now, we only handle text parts
+					// Tool calls can be added later when needed
+					if (part.type === "text" && "text" in part) {
+						newParts.push({
+							id: nanoid(),
+							messageId,
+							type: part.type,
+							order: j,
+							textContent: part.text as string,
+						});
 					}
 				}
+			}
+		}
+
+		// Batch insert in a transaction for data integrity
+		await db.transaction(async (tx) => {
+			if (newMessages.length > 0) {
+				await tx.insert(message).values(newMessages);
+			}
+			if (newParts.length > 0) {
+				await tx.insert(messagePart).values(newParts);
 			}
 		});
 

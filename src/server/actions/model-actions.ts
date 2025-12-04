@@ -113,18 +113,22 @@ export const reorderStarredModels = createServerFn()
   .handler(async ({ context, data }) => {
     const { db } = context.config;
 
-    // Update the order of each model
-    for (let i = 0; i < data.modelIds.length; i++) {
-      await db
-        .update(starredModel)
-        .set({ order: i })
-        .where(
-          and(
-            eq(starredModel.modelId, data.modelIds[i]),
-            eq(starredModel.userId, context.user.id)
-          )
-        );
-    }
+    // Update all model orders in a single transaction with parallel execution
+    await db.transaction(async (tx) => {
+      await Promise.all(
+        data.modelIds.map((modelId, index) =>
+          tx
+            .update(starredModel)
+            .set({ order: index })
+            .where(
+              and(
+                eq(starredModel.modelId, modelId),
+                eq(starredModel.userId, context.user.id)
+              )
+            )
+        )
+      );
+    });
 
     return { success: true };
   });
